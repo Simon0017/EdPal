@@ -12,6 +12,7 @@ class UserRegistrationForm(forms.ModelForm):
         widget=forms.PasswordInput(attrs={"placeholder": "Password"}),
         min_length=8,
     )
+    
     password_confirm = forms.CharField(
         widget=forms.PasswordInput(attrs={"placeholder": "Confirm password"}),
         label="Confirm Password",
@@ -40,7 +41,7 @@ class UserRegistrationForm(forms.ModelForm):
         user.set_password(self.cleaned_data["password"])
         if commit:
             user.save()
-        return user
+        return user,self.cleaned_data["password"]
 
 
 class UserProfileForm(forms.ModelForm):

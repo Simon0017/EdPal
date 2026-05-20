@@ -1,13 +1,380 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="theme-dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Registration</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EdPal | Create Account</title>
+
+  <!-- Google Fonts: Syne (display) + DM Sans (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CDN (replace with compiled build in production) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Project registration styles -->
+  <link rel="stylesheet" href="{% static 'accounts/css/registration.css' %}" />
+
+  <!-- favicon -->
     <link rel="shortcut icon" href="{% static 'core/img/edpal-logo.jpg' %}" type="image/x-icon">
+
+  <!-- Inject Django URL for JS fetch — JS reads window.REGISTRATION_URL -->
+  <script>
+    window.REGISTRATION_URL = "{% url 'user_regisration' %}";
+  </script>
 </head>
-<body>
-    
+
+<body class="reg-body min-h-screen flex flex-col">
+
+  <!-- ===== Page Header ===== -->
+  <header class="reg-header flex items-center justify-between px-6 py-4">
+    <div class="reg-logo flex items-center gap-2">
+      <img src="{% static 'core/img/edpal-logo.jpg' %}" alt="EdPal logo" class="reg-logo-icon" />
+      <span class="reg-logo-text">EdPal</span>
+    </div>
+
+    <!-- Theme toggle -->
+    <button
+      id="themeToggle"
+      class="theme-toggle"
+      aria-label="Toggle light / dark theme"
+      title="Toggle theme"
+    >
+      <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">☀</span>
+      <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">☽</span>
+    </button>
+  </header>
+
+  <!-- ===== Main content ===== -->
+  <main class="flex-1 flex items-center justify-center px-4 py-10">
+    <div class="reg-card w-full max-w-xl">
+
+      <!-- Card header -->
+      <div class="reg-card__header mb-6">
+        <h1 class="reg-heading">Create your EdPal account</h1>
+        <p class="reg-subheading">Step <span id="stepNumber">1</span> of 4</p>
+      </div>
+
+      <!-- ===== Stepper ===== -->
+      <nav class="stepper mb-8" aria-label="Registration steps">
+        <ol class="stepper__list">
+          <li class="stepper__item stepper__item--active" data-step="1" aria-current="step">
+            <span class="stepper__dot">1</span>
+            <span class="stepper__label">Account</span>
+          </li>
+          <li class="stepper__item" data-step="2">
+            <span class="stepper__dot">2</span>
+            <span class="stepper__label">Profile</span>
+          </li>
+          <li class="stepper__item" data-step="3">
+            <span class="stepper__dot">3</span>
+            <span class="stepper__label">Careers</span>
+          </li>
+          <li class="stepper__item" data-step="4">
+            <span class="stepper__dot">4</span>
+            <span class="stepper__label">Subjects</span>
+          </li>
+        </ol>
+        <!-- Progress bar -->
+        <div class="stepper__bar" role="progressbar" aria-valuemin="1" aria-valuemax="4" aria-valuenow="1">
+          <div class="stepper__fill" id="stepperFill" style="width: 25%"></div>
+        </div>
+      </nav>
+
+      <!-- ===== Form ===== -->
+      <!-- CSRF token is inside so FormData captures it automatically -->
+      <form
+        id="registrationForm"
+        novalidate
+        autocomplete="off"
+        aria-label="Multi-step registration form"
+      >
+        {% csrf_token %}
+
+        <!-- ─── Global error banner (server-side 400 errors) ─── -->
+        <div
+          id="globalError"
+          class="form-error-banner hidden"
+          role="alert"
+          aria-live="assertive"
+        ></div>
+
+        <!-- ════════════════════════════════════════════════
+             STEP 1 — UserRegistrationForm
+             Fields: username, first_name, last_name, email,
+                     password, password_confirm
+        ════════════════════════════════════════════════ -->
+        <fieldset id="step1" class="reg-step" data-step="1">
+          <legend class="sr-only">Step 1: Account details</legend>
+
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+            <!-- Username -->
+            <div class="form-group sm:col-span-2">
+              <label class="form-label" for="id_username">Username <span class="required-star">*</span></label>
+              <input
+                class="form-input"
+                type="text"
+                id="id_username"
+                name="username"
+                required
+                autocomplete="username"
+                aria-describedby="err_username"
+              />
+              <span id="err_username" class="form-error" role="alert" aria-live="polite"></span>
+            </div>
+
+            <!-- First name -->
+            <div class="form-group">
+              <label class="form-label" for="id_first_name">First name <span class="required-star">*</span></label>
+              <input
+                class="form-input"
+                type="text"
+                id="id_first_name"
+                name="first_name"
+                required
+                autocomplete="given-name"
+                aria-describedby="err_first_name"
+              />
+              <span id="err_first_name" class="form-error" role="alert" aria-live="polite"></span>
+            </div>
+
+            <!-- Last name -->
+            <div class="form-group">
+              <label class="form-label" for="id_last_name">Last name <span class="required-star">*</span></label>
+              <input
+                class="form-input"
+                type="text"
+                id="id_last_name"
+                name="last_name"
+                required
+                autocomplete="family-name"
+                aria-describedby="err_last_name"
+              />
+              <span id="err_last_name" class="form-error" role="alert" aria-live="polite"></span>
+            </div>
+
+            <!-- Email -->
+            <div class="form-group sm:col-span-2">
+              <label class="form-label" for="id_email">Email address <span class="required-star">*</span></label>
+              <input
+                class="form-input"
+                type="email"
+                id="id_email"
+                name="email"
+                required
+                autocomplete="email"
+                aria-describedby="err_email"
+              />
+              <span id="err_email" class="form-error" role="alert" aria-live="polite"></span>
+            </div>
+
+            <!-- Password -->
+            <div class="form-group">
+              <label class="form-label" for="id_password">Password <span class="required-star">*</span></label>
+              <div class="input-wrapper">
+                <input
+                  class="form-input"
+                  type="password"
+                  id="id_password"
+                  name="password"
+                  required
+                  autocomplete="new-password"
+                  aria-describedby="err_password"
+                  minlength="8"
+                />
+                <button type="button" class="input-toggle-pw" data-target="id_password" aria-label="Show password">👁</button>
+              </div>
+              <span id="err_password" class="form-error" role="alert" aria-live="polite"></span>
+            </div>
+
+            <!-- Confirm password -->
+            <div class="form-group">
+              <label class="form-label" for="id_password_confirm">Confirm password <span class="required-star">*</span></label>
+              <div class="input-wrapper">
+                <input
+                  class="form-input"
+                  type="password"
+                  id="id_password_confirm"
+                  name="password_confirm"
+                  required
+                  autocomplete="new-password"
+                  aria-describedby="err_password_confirm"
+                  minlength="8"
+                />
+                <button type="button" class="input-toggle-pw" data-target="id_password_confirm" aria-label="Show confirm password">👁</button>
+              </div>
+              <span id="err_password_confirm" class="form-error" role="alert" aria-live="polite"></span>
+            </div>
+
+          </div>
+        </fieldset>
+
+        <!-- ════════════════════════════════════════════════
+             STEP 2 — UserProfileForm
+             Fields: date_of_birth, about_me, avatar
+        ════════════════════════════════════════════════ -->
+        <fieldset id="step2" class="reg-step hidden" data-step="2">
+          <legend class="sr-only">Step 2: Profile information</legend>
+
+          <div class="grid grid-cols-1 gap-4">
+
+            <!-- Date of birth -->
+            <div class="form-group">
+              <label class="form-label" for="id_date_of_birth">Date of birth</label>
+              <input
+                class="form-input"
+                type="date"
+                id="id_date_of_birth"
+                name="date_of_birth"
+                aria-describedby="err_date_of_birth"
+              />
+              <span id="err_date_of_birth" class="form-error" role="alert" aria-live="polite"></span>
+            </div>
+
+            <!-- About me -->
+            <div class="form-group">
+              <label class="form-label" for="id_about_me">About me</label>
+              <textarea
+                class="form-input form-textarea"
+                id="id_about_me"
+                name="about_me"
+                rows="4"
+                placeholder="Tell us a little about yourself…"
+                aria-describedby="err_about_me"
+              ></textarea>
+              <span id="err_about_me" class="form-error" role="alert" aria-live="polite"></span>
+            </div>
+
+            <!-- Avatar upload -->
+            <div class="form-group">
+              <label class="form-label" for="id_avatar">Profile picture</label>
+              <div class="avatar-upload">
+                <!-- Preview circle -->
+                <div class="avatar-preview" id="avatarPreview" aria-hidden="true">
+                  <span class="avatar-preview__placeholder">+</span>
+                  <img id="avatarImg" class="avatar-preview__img hidden" src="" alt="Avatar preview" />
+                </div>
+                <div class="avatar-upload__meta">
+                  <input
+                    class="form-input-file"
+                    type="file"
+                    id="id_avatar"
+                    name="avatar"
+                    accept="image/*"
+                    aria-describedby="err_avatar avatar_hint"
+                  />
+                  <p id="avatar_hint" class="form-hint">JPG, PNG or GIF · max 5 MB</p>
+                  <span id="err_avatar" class="form-error" role="alert" aria-live="polite"></span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </fieldset>
+
+        <!-- ════════════════════════════════════════════════
+             STEP 3 — CareerPreferenceForm
+             Up to 4 career preference entries (rank + career).
+             POST keys follow: career-{i}-career, career-{i}-rank
+             (Adjust prefix to match your Django formset management).
+        ════════════════════════════════════════════════ -->
+        <fieldset id="step3" class="reg-step hidden" data-step="3">
+          <legend class="sr-only">Step 3: Career preferences</legend>
+
+          <p class="reg-step-intro">Add up to 4 career preferences in priority order.</p>
+
+          <!-- Dynamic career list -->
+          <div id="careerList" class="dynamic-list" aria-label="Career preference entries">
+            <!-- JS injects entries here -->
+          </div>
+
+          <button
+            type="button"
+            id="addCareer"
+            class="btn-outline mt-4"
+            aria-label="Add career preference"
+          >+ Add preference</button>
+
+          <span id="err_careers" class="form-error block mt-2" role="alert" aria-live="polite"></span>
+        </fieldset>
+
+        <!-- ════════════════════════════════════════════════
+             STEP 4 — SubjectForm + ProfileSubjectForm
+             Dynamic subject entries: subject name, grade, active flag.
+             POST keys: subject-{i}-subject, subject-{i}-grade,
+                        subject-{i}-is_active
+        ════════════════════════════════════════════════ -->
+        <fieldset id="step4" class="reg-step hidden" data-step="4">
+          <legend class="sr-only">Step 4: Subjects</legend>
+
+          <p class="reg-step-intro">Add the subjects you study or teach, with grades and status.</p>
+
+          <!-- Dynamic subject list -->
+          <div id="subjectList" class="dynamic-list" aria-label="Subject entries">
+            <!-- JS injects entries here -->
+          </div>
+
+          <button
+            type="button"
+            id="addSubject"
+            class="btn-outline mt-4"
+            aria-label="Add subject"
+          >+ Add subject</button>
+
+          <span id="err_subjects" class="form-error block mt-2" role="alert" aria-live="polite"></span>
+        </fieldset>
+
+        <!-- ─── Navigation buttons ─── -->
+        <div class="reg-nav mt-8 flex items-center justify-between">
+          <button
+            type="button"
+            id="btnBack"
+            class="btn-ghost"
+            aria-label="Go to previous step"
+            disabled
+          >← Back</button>
+
+          <button
+            type="button"
+            id="btnNext"
+            class="btn-primary"
+            aria-label="Go to next step"
+          >Next →</button>
+
+          <!-- Submit (hidden until step 4) -->
+          <button
+            type="submit"
+            id="btnSubmit"
+            class="btn-primary btn-submit hidden"
+            aria-label="Submit registration"
+          >
+            <span class="btn-submit__text">Create account</span>
+            <span class="btn-submit__spinner" aria-hidden="true"></span>
+          </button>
+        </div>
+
+      </form><!-- /#registrationForm -->
+
+      <!-- ─── Success panel (shown on HTTP 201) ─── -->
+      <div id="successPanel" class="reg-success hidden" role="status" aria-live="polite">
+        <span class="reg-success__icon" aria-hidden="true">✓</span>
+        <h2 class="reg-success__heading">Account created!</h2>
+        <p class="reg-success__body">Welcome aboard. Redirecting you…</p>
+      </div>
+
+    </div><!-- /.reg-card -->
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="reg-footer text-center py-4">
+    <p class="reg-footer__text">Already have an account? <a href="/accounts/login/" class="reg-link">Sign in</a></p>
+  </footer>
+
+  <!-- Registration JS -->
+  <script src="{% static 'accounts/js/registration.js' %}"></script>
+
 </body>
 </html>
