@@ -5,6 +5,7 @@ from .models import *
 from django.db.models import Q
 from rest_framework import status
 from django.views.decorators.http import require_GET
+from core.decorators import outer_exception_handler
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ FBV(s)
 '''
 
 @require_GET
+@outer_exception_handler(logger)
 def search_careers_re(request:HttpRequest):
     '''Uses regex to search the db for careers'''
     try:

@@ -5,7 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def json_exception_handler(logger=logger):
+def outer_exception_handler(logger=logger):
     """
     Outer exception handler decorator
     """

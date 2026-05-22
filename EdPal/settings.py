@@ -152,6 +152,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # login url
 LOGIN_URL = '/login'
+LOGIN_REDIRECT_URL = '/dashboard'
+LOGOUT_REDIRECT_URL = '/'
 
 
 # Celery settings
@@ -176,6 +178,53 @@ CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_BEAT_SCHEDULE = {
     
 }
+
+# social media  oauth
+# Site ID for allauth
+SITE_ID = 1
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE' : [
+            'profile',
+            'email'
+        ],
+        'APP': {
+            'client_id': os.getenv('CLIENT_ID', 'your-client-id'),
+            'secret': os.getenv("CLIENT_SECRET", 'your-client-secret'),
+        },
+        'AUTH_PARAMS': {
+            'access_type':'online',
+        }
+    },
+    'linkedin_oauth2': {
+        'SCOPE': [
+            'r_liteprofile',
+            'r_emailaddress',
+        ],
+        'PROFILE_FIELDS': [
+            'id',
+            'first-name',
+            'last-name',
+            'email-address',
+            'picture-url',
+            'public-profile-url',
+        ]
+    }
+}
+
+SOCIALACCOUNT_LOGIN_ON_GET = True  # Automatically log in users on GET request
+ACCOUNT_UNIQUE_EMAIL = True # only one email per 
+
+# Email conf
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = os.getenv('EMAIL_PORT', 587)
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')  
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD','default-password') 
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # logging
 LOGGING = {
