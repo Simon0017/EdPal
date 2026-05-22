@@ -1,0 +1,475 @@
+/*
+ * FILE: accounts/static/accounts/css/login.css
+ * PURPOSE: Login-page-specific styles ONLY.
+ *   - Assumes registration.css is already loaded (provides :root tokens,
+ *     .btn-primary, .form-input, .form-label, .form-error, .theme-toggle,
+ *     .input-wrapper, .input-toggle-pw, .reg-link, .reg-footer__text, etc.)
+ *   - This file adds: split layout, video panel, fallback banner,
+ *     login card entrance animation, status messages, responsive rules.
+ * NO token re-declarations — consume var(--...) from registration.css.
+ */
+
+/* ═══════════════════════════════════════════════════════════════
+   1. BODY / PAGE BASE
+   ═══════════════════════════════════════════════════════════════ */
+.login-body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  margin: 0;
+  overflow: hidden; /* prevent scrollbar flash on split layout */
+  transition: background-color var(--transition-slow), color var(--transition-slow);
+}
+
+/* Allow scroll on mobile where layout stacks */
+@media (max-width: 767px) {
+  .login-body { overflow: auto; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   2. SPLIT SCREEN WRAPPER
+   ═══════════════════════════════════════════════════════════════ */
+.login-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;   /* 50/50 desktop */
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Tablet: video shrinks to 40% */
+@media (max-width: 1024px) and (min-width: 768px) {
+  .login-split {
+    grid-template-columns: 5fr 7fr;
+  }
+}
+
+/* Mobile: stack vertically, video panel hidden */
+@media (max-width: 767px) {
+  .login-split {
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   3. LEFT — VIDEO PANEL
+   ═══════════════════════════════════════════════════════════════ */
+.login-video-panel {
+  position: relative;
+  overflow: hidden;
+  background-color: rgb(4, 26, 41); /* brand dark as base */
+}
+
+/* Hide entirely on mobile */
+@media (max-width: 767px) {
+  .login-video-panel {
+    display: none;
+  }
+}
+
+/* Video fills the panel, cropped to cover */
+.login-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Slow-motion cinematic feel — CSS filter + playbackRate set in JS */
+  filter: saturate(0.75) brightness(0.65);
+  transition: opacity 0.6s ease;
+}
+
+/* Gradient overlay — darkens bottom for brand text legibility */
+.login-video-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to top,  rgba(4,26,41,0.92) 0%,  rgba(4,26,41,0.3) 50%,  transparent 100%),
+    linear-gradient(to right, rgba(4,26,41,0.4) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ─── Brand overlay on video ─── */
+.login-video-brand {
+  position: absolute;
+  bottom: var(--spacing-2xl);
+  left: var(--spacing-xl);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  animation: brandFadeUp 1s 0.5s both;
+}
+
+.login-video-brand__icon {
+  font-size: 2rem;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.login-video-brand__name {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.login-video-brand__tagline {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.65);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+@keyframes brandFadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Fallback banner (shown when video fails) ─── */
+.login-fallback-banner {
+  position: absolute;
+  inset: 0;
+  display: none;               /* JS shows this on video error */
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  /* Animated geometric background */
+  background:
+    radial-gradient(ellipse at 30% 60%, rgba(232,93,4,0.25) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(220,47,2,0.15) 0%, transparent 50%),
+    rgb(4, 26, 41);
+  overflow: hidden;
+}
+
+.login-fallback-banner.visible {
+  display: flex;
+}
+
+.login-fallback__inner {
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.login-fallback__logo-icon {
+  display: block;
+  font-size: 3.5rem;
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-md);
+  animation: spinPulse 4s ease-in-out infinite;
+}
+
+@keyframes spinPulse {
+  0%,100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 12px rgba(232,93,4,.6)); }
+  50%      { transform: scale(1.12) rotate(15deg); filter: drop-shadow(0 0 28px rgba(232,93,4,.9)); }
+}
+
+.login-fallback__brand {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.05em;
+  margin: 0 0 var(--spacing-sm);
+  line-height: 1;
+}
+
+.login-fallback__tagline {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.55);
+  margin: 0;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+/* Decorative animated ring */
+.login-fallback__deco {
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  border: 1px solid rgba(232,93,4,0.2);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: ringExpand 3s ease-out infinite;
+  pointer-events: none;
+}
+
+.login-fallback__deco::before {
+  content: '';
+  position: absolute;
+  inset: 24px;
+  border-radius: 50%;
+  border: 1px solid rgba(232,93,4,0.12);
+}
+
+@keyframes ringExpand {
+  0%   { transform: translate(-50%, -50%) scale(0.9); opacity: .6; }
+  100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   4. RIGHT — FORM PANEL
+   ═══════════════════════════════════════════════════════════════ */
+.login-form-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-lg);
+  background: var(--bg);
+  transition: background var(--transition-slow);
+  overflow-y: auto;
+  min-height: 100vh;
+}
+
+/* On mobile give more breathing room */
+@media (max-width: 767px) {
+  .login-form-panel {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+}
+
+/* ── Top row: mobile logo + theme toggle ── */
+.login-form-panel__top {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-xl);
+}
+
+/* Mobile-only logo (video panel is hidden on mobile) */
+.login-mobile-logo {
+  display: none;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+@media (max-width: 767px) {
+  .login-mobile-logo { display: flex; }
+}
+
+.login-mobile-logo__icon {
+  font-size: 1.4rem;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.login-mobile-logo__text {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.03em;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   5. LOGIN CARD
+   ══════════════════════════════════════════════════════════════ */
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  /* Glassmorphism lift — subtle, not garish */
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 0 1px rgba(232,93,4,0.04) inset;
+  padding: var(--spacing-xl) var(--spacing-xl);
+  transition: background var(--transition-slow), border-color var(--transition-slow);
+  /* Entrance animation */
+  animation: cardEntrance 0.55s cubic-bezier(0.2, 0.8, 0.4, 1) both;
+}
+
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* On smaller screens, no border/shadow — full-width form feel */
+@media (max-width: 480px) {
+  .login-card {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: var(--spacing-md) 0;
+    animation: none;
+  }
+}
+
+.login-card__header {
+  margin-bottom: var(--spacing-xl);
+}
+
+.login-heading {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  margin: 0 0 var(--spacing-xs);
+}
+
+.login-subheading {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   6. STATUS MESSAGES (success / error toast inside card)
+   ══════════════════════════════════════════════════════════════ */
+.login-status {
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.875rem;
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  animation: statusSlide 0.25s ease forwards;
+}
+
+.login-status.hidden {
+  display: none !important;
+}
+
+@keyframes statusSlide {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.login-status--error {
+  background: rgba(239,68,68,.1);
+  border: 1px solid rgba(239,68,68,.3);
+  color: var(--color-error);
+}
+
+.login-status--success {
+  background: rgba(34,197,94,.1);
+  border: 1px solid rgba(34,197,94,.3);
+  color: var(--color-success);
+}
+
+.login-status__icon {
+  flex-shrink: 0;
+  font-style: normal;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   7. MISC LOGIN-SPECIFIC TYPOGRAPHY
+   ══════════════════════════════════════════════════════════════ */
+.login-link {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color var(--transition-fast);
+}
+
+.login-link:hover { color: var(--color-primary); text-decoration: underline; }
+.login-link--sm   { font-size: 0.8125rem; }
+
+.login-register-prompt {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   8. FOOTER
+   ══════════════════════════════════════════════════════════════ */
+.login-footer {
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  padding-top: var(--spacing-md);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   9. LOCKED VIDEO CLASS (stops interaction during load)
+   ══════════════════════════════════════════════════════════════ */
+.video-locked {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   10. SUBMIT BUTTON full-width override
+       (btn-primary is defined in registration.css)
+   ══════════════════════════════════════════════════════════════ */
+#btnLogin {
+  width: 100%;
+  justify-content: center;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   11. LIGHT THEME adjustments for form panel
+   ══════════════════════════════════════════════════════════════ */
+html:not(.theme-dark) .login-form-panel {
+  background: #F8F9FA;
+}
+
+html:not(.theme-dark) .login-video-panel {
+  /* Keep dark even in light mode — it's a media panel */
+  filter: none;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   12. LARGE SCREENS — give video panel a richer feel
+   ══════════════════════════════════════════════════════════════ */
+@media (min-width: 1280px) {
+  .login-split {
+    grid-template-columns: 55fr 45fr;
+  }
+
+  .login-heading { font-size: 2.25rem; }
+}
+
+/* Tall screens: center the card in the middle of the panel */
+@media (min-height: 800px) {
+  .login-form-panel {
+    justify-content: center;
+    gap: var(--spacing-xl);
+  }
+
+  .login-form-panel__top {
+    position: absolute;
+    top: var(--spacing-xl);
+    right: var(--spacing-xl);
+    max-width: none;
+    width: auto;
+    margin-bottom: 0;
+  }
+
+  .login-footer {
+    position: absolute;
+    bottom: var(--spacing-lg);
+  }
+}

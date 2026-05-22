@@ -114,6 +114,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# password reset
+PASSWORD_RESET_TIMEOUT = 3600*3 #3hrs timeout
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
@@ -146,6 +149,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# login url
+LOGIN_URL = '/login'
+
 
 # Celery settings
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL','')

@@ -27,6 +27,9 @@ class Institution(models.Model):
 
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return f"Institution: {self.name.title()}, Type: {self.type}"
+
 
 class Career(models.Model):
     """
@@ -57,6 +60,9 @@ class Career(models.Model):
             self.slug = slugify(self.title)
 
         super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"Career: {self.title.title()} : {self.code}"
 
 
 class CareerTag(models.Model):
@@ -111,6 +117,8 @@ class Course(models.Model):
 
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return f"Course: {self.title.title()} : {self.kuccps_code}"
 
 class CutoffCluster(models.Model):
     """
@@ -134,6 +142,8 @@ class CutoffCluster(models.Model):
             )
         ]
 
+    def __str__(self):
+        return f"Course: {self.course.title}, Points: {self.cutoff_points}"
 
 class SubjectRequirement(models.Model):
     """
@@ -161,3 +171,6 @@ class SubjectRequirement(models.Model):
                 name="uq_subjreq_course_subject"
             )
         ]
+
+    def __str__(self):
+        return f"Course: {self.course.title}, Subject: {self.subject.code}, Min Grade {self.minimum_grade}"

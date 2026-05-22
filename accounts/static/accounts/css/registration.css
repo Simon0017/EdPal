@@ -1,7 +1,4 @@
 
-/* ═══════════════════════════════════════════════════════════════
-   1. DESIGN TOKENS — Dark mode (default)
-   ═══════════════════════════════════════════════════════════════ */
 :root {
   /* Palette */
   --color-background:        #0A0A0A;
@@ -928,4 +925,33 @@ select.form-input {
   .dynamic-list__fields--subject {
     grid-template-columns: 1fr 1fr;
   }
+}
+
+/* Autocomplete dropdown styles — cannot use Tailwind for position:absolute overlays */
+
+.autocomplete-wrap { position: relative; flex: 1; }
+.autocomplete-dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 50;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+  max-height: 180px; overflow-y: auto; display: none;
+}
+.autocomplete-dropdown.open { display: block; }
+.autocomplete-option {
+  padding: 0.5rem 0.875rem; cursor: pointer; font-size: 0.875rem;
+  color: var(--text); transition: background var(--transition-fast);
+}
+.autocomplete-option:hover,
+.autocomplete-option.focused { background: var(--surface-hover); color: var(--color-primary); }
+.autocomplete-option--empty { color: var(--text-muted); cursor: default; }
+.autocomplete-option--loading { color: var(--text-muted); cursor: default; font-style: italic; }
+.autocomplete-chip {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  padding: 0.2rem 0.6rem; background: rgba(232,93,4,.12);
+  border: 1px solid rgba(232,93,4,.3); border-radius: var(--radius-full);
+  font-size: 0.8rem; color: var(--color-primary); font-weight: 500;
+}
+.autocomplete-chip__remove {
+  background: none; border: none; cursor: pointer; color: inherit;
+  font-size: 0.9rem; line-height: 1; padding: 0; margin-left: 2px;
 }

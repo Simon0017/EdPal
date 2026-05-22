@@ -18,11 +18,12 @@
   <link rel="stylesheet" href="{% static 'accounts/css/registration.css' %}" />
 
   <!-- favicon -->
-    <link rel="shortcut icon" href="{% static 'core/img/edpal-logo.jpg' %}" type="image/x-icon">
+   <link rel="shortcut icon" href="{% static 'core/img/edpal-logo.jpg' %}" type="image/x-icon">
 
-  <!-- Inject Django URL for JS fetch — JS reads window.REGISTRATION_URL -->
   <script>
-    window.REGISTRATION_URL = "{% url 'user_regisration' %}";
+    window.REGISTRATION_URL  = "{% url 'user_registration' %}";
+    window.SEARCH_CAREERS_URL = "{% url 'search_careers' %}";
+    window.SEARCH_SUBJECTS_URL = "{% url 'search_subjects' %}";
   </script>
 </head>
 
@@ -370,11 +371,12 @@
 
   <!-- ===== Footer ===== -->
   <footer class="reg-footer text-center py-4">
-    <p class="reg-footer__text">Already have an account? <a href="/accounts/login/" class="reg-link">Sign in</a></p>
+    <p class="reg-footer__text">Already have an account? <a href="{% url 'user_login' %}" class="reg-link">Sign in</a></p>
   </footer>
 
+  
   <!-- Registration JS -->
   <script src="{% static 'accounts/js/registration.js' %}"></script>
 
-</body>
+
 </html>

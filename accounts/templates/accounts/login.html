@@ -1,0 +1,209 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="theme-dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EdPal | Sign In</title>
+
+  <!-- Fonts: Syne display + DM Sans body (same as registration) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Shared theme (variables, btn-primary, form-input, etc.) -->
+  <link rel="stylesheet" href="{% static 'accounts/css/registration.css' %}" />
+
+  <!-- Login-specific layout + animations -->
+  <link rel="stylesheet" href="{% static 'accounts/css/login.css' %}" />
+
+  <!-- favicon -->
+    <link rel="shortcut icon" href="{% static 'core/img/edpal-logo.jpg' %}" type="image/x-icon">
+
+  <!-- Inject URLs for JS — never hardcode paths in .js files -->
+  <script>
+    window.LOGIN_URL     = "{% url 'user_login' %}";
+    window.DASHBOARD_URL = "{% url 'user_login' %}";
+    window.REGISTER_URL  = "{% url 'user_registration' %}";
+  </script>
+</head>
+
+<body class="login-body">
+
+  <!-- ══════════════════════════════════════════════════════
+       SPLIT SCREEN WRAPPER
+  ══════════════════════════════════════════════════════ -->
+  <div class="login-split">
+
+    <!-- ── LEFT: Video / Fallback panel ── -->
+    <aside class="login-video-panel" aria-hidden="true">
+
+      <!-- Video element — src is set randomly by JS -->
+      <video
+        id="loginVideo"
+        class="login-video"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+      ></video>
+
+      <!-- Gradient overlay for readability -->
+      <div class="login-video-overlay"></div>
+
+      <!-- Fallback banner (hidden while video loads, shown on error) -->
+      <div class="login-fallback-banner" id="loginFallback">
+        <div class="login-fallback__inner">
+          <span class="login-fallback__logo-icon" aria-hidden="true">◈</span>
+          <!-- <span class="login-fallback__logo-icon" style="justify-content: center;" aria-hidden="true"><img src="{% static 'core/img/edpal-logo.jpg' %}" alt="EdPal logo" class="reg-logo-icon" /></span> -->
+          <h2 class="login-fallback__brand">EdPal</h2>
+          <p class="login-fallback__tagline">Test your limits</p>
+          <div class="login-fallback__deco" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <!-- Brand overlay that sits on top of video -->
+      <div class="login-video-brand">
+        <span class="login-video-brand__icon" aria-hidden="true">◈</span>
+        <span class="login-video-brand__name">EdPal</span>
+        <p class="login-video-brand__tagline">Kenya's smartest learning platform</p>
+      </div>
+
+    </aside>
+
+    <!-- ── RIGHT: Login form panel ── -->
+    <main class="login-form-panel">
+
+      <!-- Header row: logo (mobile only) + theme toggle -->
+      <div class="login-form-panel__top space-x-2">
+        <!-- Logo visible only on mobile where the video panel is hidden -->
+        <div class="login-mobile-logo">
+          <img src="{% static 'core/img/edpal-logo.jpg' %}" alt="EdPal logo" class="reg-logo-icon" /> 
+          <span class="login-mobile-logo__text">EdPal</span>
+        </div>
+        <!-- Theme toggle — same behaviour as registration -->
+        <button
+          id="themeToggle"
+          class="theme-toggle"
+          aria-label="Toggle light / dark theme"
+          title="Toggle theme"
+        >
+          <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">☀</span>
+          <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">☽</span>
+        </button>
+      </div>
+
+      <!-- Card -->
+      <div class="login-card" role="main">
+
+        <div class="login-card__header">
+          <h1 class="login-heading">Welcome back</h1>
+          <p class="login-subheading">Sign in to continue your EdPal journey</p>
+        </div>
+
+        <!-- ── Status message (aria-live for screen readers) ── -->
+        <div
+          id="loginStatus"
+          class="login-status hidden"
+          role="alert"
+          aria-live="assertive"
+        ></div>
+
+        <!-- ── Login form ── -->
+        <form
+          id="loginForm"
+          novalidate
+          autocomplete="on"
+          aria-label="Login form"
+        >
+          {% csrf_token %}
+
+          <!-- Username -->
+          <div class="form-group mb-4">
+            <label class="form-label" for="id_username">
+              Username <span class="required-star" aria-hidden="true">*</span>
+            </label>
+            <input
+              class="form-input"
+              type="text"
+              id="id_username"
+              name="username"
+              required
+              autocomplete="username"
+              autofocus
+              aria-describedby="err_username"
+              placeholder="your_username"
+            />
+            <span id="err_username" class="form-error" role="alert" aria-live="polite"></span>
+          </div>
+
+          <!-- Password -->
+          <div class="form-group mb-6">
+            <label class="form-label" for="id_password">
+              Password <span class="required-star" aria-hidden="true">*</span>
+            </label>
+            <div class="input-wrapper">
+              <input
+                class="form-input"
+                type="password"
+                id="id_password"
+                name="password"
+                required
+                autocomplete="current-password"
+                aria-describedby="err_password"
+                placeholder="••••••••"
+              />
+              <!-- Reuse shared password-toggle button style -->
+              <button
+                type="button"
+                class="input-toggle-pw"
+                data-target="id_password"
+                aria-label="Show password"
+              >👁</button>
+            </div>
+            <span id="err_password" class="form-error" role="alert" aria-live="polite"></span>
+          </div>
+
+          <!-- Forgot password link -->
+          <div class="flex justify-end mb-5 -mt-3">
+            <a href="#" class="login-link login-link--sm">Forgot password?</a>
+          </div>
+
+          <!-- Submit -->
+          <button
+            type="submit"
+            id="btnLogin"
+            class="btn-primary btn-submit w-full"
+            aria-label="Sign in"
+          >
+            <span class="btn-submit__text">Sign in</span>
+            <span class="btn-submit__spinner" aria-hidden="true"></span>
+          </button>
+
+        </form><!-- /#loginForm -->
+
+        <!-- Register link -->
+        <p class="login-register-prompt mt-6 text-center">
+          Don't have an account?
+          <a id="registerLink" href="#" class="reg-link">Create one free</a>
+        </p>
+
+      </div><!-- /.login-card -->
+
+      <!-- Footer -->
+      <footer class="login-footer">
+        <p class="reg-footer__text">© 2025 EdPal · Kenya</p>
+      </footer>
+
+    </main><!-- /.login-form-panel -->
+
+  </div><!-- /.login-split -->
+
+  <script src="{% static 'accounts/js/login.js' %}"></script>
+
+</body>
+</html>

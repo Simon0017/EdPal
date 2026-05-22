@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+import re
 
 from .models import UserProfile, CareerPreference, Subject, ProfileSubject
 
@@ -24,8 +25,14 @@ class UserRegistrationForm(forms.ModelForm):
 
     def clean_email(self):
         email = self.cleaned_data.get("email", "").strip().lower()
+
+        email_regex = r'^[A-Za-z0-9](\.?[A-Za-z0-9_%+-])*@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$'
+        if not re.match(email_regex, email):
+            raise ValidationError("Please enter a valid email address.")
+        
         if User.objects.filter(email=email).exists():
             raise ValidationError("A user with this email already exists.")
+        
         return email
 
     def clean(self):
@@ -188,3 +195,4 @@ class ProfileSubjectForm(forms.ModelForm):
                     {"subject": "This subject is already on your profile."}
                 )
         return cleaned
+    

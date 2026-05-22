@@ -29,6 +29,9 @@ class UserProfile(models.Model):
 
     class Meta:
         db_table = "accounts_profile"
+    
+    def __str__(self):
+        return f"{self.user.username.title()}\'s Profile"
 
     @property
     def completion_percentage(self) -> int:
@@ -64,6 +67,7 @@ class CareerPreference(models.Model):
     )
 
     rank    = models.PositiveSmallIntegerField(
+        blank=True,
         help_text="1=First choice, 4=Fourth choice (KUCCPS aligned)"
     )
 
@@ -121,6 +125,8 @@ class Subject(models.Model):
 
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return f"Subject: {self.name.title()}"
 
 class ProfileSubject(models.Model):
     """

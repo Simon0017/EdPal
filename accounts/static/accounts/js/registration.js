@@ -1,3 +1,23 @@
+/**
+ * FILE: accounts/static/accounts/js/registration.js
+ * PURPOSE: Multi-step registration form logic.
+ *
+ * DEPENDENCIES:
+ *   - window.REGISTRATION_URL must be set in the template:
+ *       <script>window.REGISTRATION_URL = "{% url 'user_regisration' %}";</script>
+ *   - A hidden {% csrf_token %} input inside #registrationForm so FormData
+ *     captures `csrfmiddlewaretoken` automatically.
+ *
+ * CAREER FORMSET KEYS (Step 3):
+ *   career-{i}-career, career-{i}-rank
+ *   If your backend uses a Django ModelFormset, also include:
+ *     career-TOTAL_FORMS, career-INITIAL_FORMS, career-MIN_NUM_FORMS, career-MAX_NUM_FORMS
+ *   This file appends those management keys automatically before POST.
+ *
+ * SUBJECT FORMSET KEYS (Step 4):
+ *   subject-{i}-subject, subject-{i}-grade, subject-{i}-is_active
+ *   Same management key pattern as careers.
+ */
 
 'use strict';
 
@@ -7,34 +27,194 @@
 const TOTAL_STEPS  = 4;
 const MAX_CAREERS  = 4;
 
-// Career options — extend or fetch dynamically if needed
-const CAREER_OPTIONS = [
-  { value: '',          label: '— select career —' },
-  { value: 'engineer',  label: 'Software Engineer' },
-  { value: 'designer',  label: 'UX/UI Designer' },
-  { value: 'doctor',    label: 'Medicine / Doctor' },
-  { value: 'teacher',   label: 'Education / Teacher' },
-  { value: 'lawyer',    label: 'Law / Lawyer' },
-  { value: 'finance',   label: 'Finance / Accounting' },
-  { value: 'science',   label: 'Research / Science' },
-  { value: 'other',     label: 'Other' },
-];
-
-// Subject options — extend as needed
-const SUBJECT_OPTIONS = [
-  { value: '',           label: '— select subject —' },
-  { value: 'math',       label: 'Mathematics' },
-  { value: 'english',    label: 'English' },
-  { value: 'science',    label: 'Science' },
-  { value: 'history',    label: 'History' },
-  { value: 'geography',  label: 'Geography' },
-  { value: 'ict',        label: 'ICT / Computer Science' },
-  { value: 'art',        label: 'Art & Design' },
-  { value: 'pe',         label: 'Physical Education' },
-  { value: 'other',      label: 'Other' },
-];
+// Options are loaded live from the DB via search endpoints — no hardcoding.
 
 let currentStep = 1;
+
+/* ─────────────────────────────────────────────────────────────
+   DEBOUNCE — limits how often we hit the search endpoints
+───────────────────────────────────────────────────────────────*/
+/**
+ * Returns a debounced version of fn that fires after `wait` ms of silence.
+ * Prevents a DB query on every keypress.
+ */
+function debounce (fn, wait = 350) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), wait);
+  };
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LIVE-SEARCH AUTOCOMPLETE WIDGET
+   Builds a text input + floating dropdown that queries the server.
+   The chosen item's DB id is stored in a hidden <input> for POST.
+
+   Usage:
+     buildAutocomplete({
+       searchUrl : window.SEARCH_CAREERS_URL,   // endpoint
+       inputId   : 'career_0_search',           // visible text box id
+       hiddenName: 'career-0-career',           // hidden field name (what Django gets)
+       placeholder: 'Search careers…',
+       container : parentElement,               // where to mount
+     })
+───────────────────────────────────────────────────────────────*/
+function buildAutocomplete ({ searchUrl, inputId, hiddenName, placeholder, container }) {
+  const wrap = document.createElement('div');
+  wrap.className = 'autocomplete-wrap';
+
+  // Visible search input
+  const searchInput = document.createElement('input');
+  searchInput.className   = 'form-input';
+  searchInput.type        = 'text';
+  searchInput.id          = inputId;
+  searchInput.placeholder = placeholder;
+  searchInput.autocomplete = 'off';
+  searchInput.setAttribute('aria-autocomplete', 'list');
+  searchInput.setAttribute('aria-haspopup', 'listbox');
+
+  // Hidden input that carries the chosen DB id to FormData / Django
+  const hiddenInput = document.createElement('input');
+  hiddenInput.type  = 'hidden';
+  hiddenInput.name  = hiddenName;
+  hiddenInput.value = '';
+
+  // Chip showing selected item (replaces search box when chosen)
+  const chipWrap = document.createElement('div');
+  chipWrap.style.display = 'none';
+
+  // Dropdown list
+  const dropdown = document.createElement('div');
+  dropdown.className = 'autocomplete-dropdown';
+  dropdown.setAttribute('role', 'listbox');
+
+  wrap.appendChild(searchInput);
+  wrap.appendChild(hiddenInput);
+  wrap.appendChild(chipWrap);
+  wrap.appendChild(dropdown);
+  container.appendChild(wrap);
+
+  let focusedIndex = -1;
+
+  function renderOptions (items) {
+    dropdown.innerHTML = '';
+    focusedIndex = -1;
+
+    if (!items.length) {
+      const empty = document.createElement('div');
+      empty.className = 'autocomplete-option autocomplete-option--empty';
+      empty.textContent = 'No results found.';
+      dropdown.appendChild(empty);
+    } else {
+      items.forEach(({ id, name }) => {
+        const opt = document.createElement('div');
+        opt.className = 'autocomplete-option';
+        opt.setAttribute('role', 'option');
+        opt.dataset.id   = id;
+        opt.dataset.name = name;
+        opt.textContent  = name;
+        opt.addEventListener('mousedown', e => {
+          // mousedown fires before blur so we can capture the click
+          e.preventDefault();
+          selectItem(id, name);
+        });
+        dropdown.appendChild(opt);
+      });
+    }
+    dropdown.classList.add('open');
+  }
+
+  function selectItem (id, name) {
+    hiddenInput.value      = id;
+    searchInput.style.display = 'none';
+    dropdown.classList.remove('open');
+
+    // Show chip
+    chipWrap.style.display = 'block';
+    chipWrap.innerHTML = '';
+    const chip = document.createElement('span');
+    chip.className = 'autocomplete-chip';
+    chip.innerHTML = `${name} <button type="button" class="autocomplete-chip__remove" aria-label="Remove ${name}">✕</button>`;
+    chip.querySelector('button').addEventListener('click', () => {
+      hiddenInput.value         = '';
+      chipWrap.style.display    = 'none';
+      chipWrap.innerHTML        = '';
+      searchInput.style.display = '';
+      searchInput.value         = '';
+      searchInput.focus();
+    });
+    chipWrap.appendChild(chip);
+  }
+
+  // Debounced fetch — fires 350 ms after the user stops typing
+  const doSearch = debounce(async (query) => {
+    if (!query || query.length < 2) { dropdown.classList.remove('open'); return; }
+
+    // Show loading state
+    dropdown.innerHTML = '<div class="autocomplete-option autocomplete-option--loading">Searching…</div>';
+    dropdown.classList.add('open');
+
+    try {
+      const res  = await fetch(`${searchUrl}?query=${encodeURIComponent(query)}`);
+      const data = await res.json();
+
+      if (!data.success) {
+        renderOptions([]);
+        return;
+      }
+
+      // View returns { success: true, message: { id: name, ... } }
+      // Convert object → array of { id, name }
+      const items = Array.isArray(data.message)
+          ? data.message.map(item => ({ id: item.id, name: item.title ?? item.name }))
+          : Object.entries(data.message).map(([id, name]) => ({ id, name }));
+      console.log(data);
+      
+      console.log(items);
+      
+      renderOptions(items);
+
+    } catch (err) {
+      dropdown.innerHTML = '<div class="autocomplete-option autocomplete-option--empty">Search failed.</div>';
+      console.error('[Autocomplete] search error:', err);
+    }
+  }, 350);
+
+  searchInput.addEventListener('input', () => doSearch(searchInput.value.trim()));
+
+  // Keyboard navigation inside dropdown
+  searchInput.addEventListener('keydown', e => {
+    const opts = dropdown.querySelectorAll('.autocomplete-option:not(.autocomplete-option--empty):not(.autocomplete-option--loading)');
+    if (!opts.length) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      focusedIndex = Math.min(focusedIndex + 1, opts.length - 1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      focusedIndex = Math.max(focusedIndex - 1, 0);
+    } else if (e.key === 'Enter' && focusedIndex >= 0) {
+      e.preventDefault();
+      const opt = opts[focusedIndex];
+      selectItem(opt.dataset.id, opt.dataset.name);
+      return;
+    } else if (e.key === 'Escape') {
+      dropdown.classList.remove('open');
+      return;
+    }
+
+    opts.forEach((o, i) => o.classList.toggle('focused', i === focusedIndex));
+  });
+
+  // Close dropdown when focus leaves the widget
+  searchInput.addEventListener('blur', () => {
+    // Small delay so mousedown on an option fires first
+    setTimeout(() => dropdown.classList.remove('open'), 150);
+  });
+
+  return { hiddenInput, searchInput };
+}
 
 /* ─────────────────────────────────────────────────────────────
    THEME
@@ -204,6 +384,52 @@ function validateCurrentStep () {
     }
   }
 
+  // Steps 2: no required fields client-side
+  if (currentStep === 3) {
+    // Each career entry must have a selected career (hidden input non-empty)
+    // and a rank value
+    const careerEntries = document.querySelectorAll('#careerList .dynamic-list__entry');
+    const errEl = document.getElementById('err_careers');
+    let careerOk = true;
+
+    careerEntries.forEach((entry, i) => {
+      const hidden = entry.querySelector(`input[name="career"]`);
+      const rank   = entry.querySelector(`input[name="rank"]`);
+      if (!hidden || !hidden.value) {
+        careerOk = false;
+      }
+      if (!rank || !rank.value) {
+        careerOk = false;
+      }
+    });
+
+    if (!careerOk) {
+      errEl.textContent = 'Please select a career and rank for each entry, or remove empty rows.';
+      valid = false;
+    } else {
+      errEl.textContent = '';
+    }
+  }
+
+  if (currentStep === 4) {
+    // Each subject entry must have a selected subject
+    const subjectEntries = document.querySelectorAll('#subjectList .dynamic-list__entry');
+    const errEl = document.getElementById('err_subjects');
+    let subjectOk = true;
+
+    subjectEntries.forEach((entry, i) => {
+      const hidden = entry.querySelector(`input[name="subject"]`);
+      if (!hidden || !hidden.value) subjectOk = false;
+    });
+
+    if (!subjectOk) {
+      errEl.textContent = 'Please select a subject for each entry, or remove empty rows.';
+      valid = false;
+    } else {
+      errEl.textContent = '';
+    }
+  }
+
   // Steps 2–4 have no hard required fields client-side (server validates)
   return valid;
 }
@@ -212,54 +438,56 @@ function validateCurrentStep () {
    DYNAMIC CAREER LIST (Step 3)
 ───────────────────────────────────────────────────────────────*/
 
-/** Build a single career entry row */
+/** Build a single career entry row with live-search autocomplete */
 function buildCareerEntry (index) {
   const entry = document.createElement('div');
   entry.className = 'dynamic-list__entry';
   entry.dataset.index = index;
 
-  // Rank field
+  // Rank number input
   const rankLabel = document.createElement('label');
   rankLabel.className = 'form-label sr-only';
   rankLabel.htmlFor = `career_${index}_rank`;
   rankLabel.textContent = `Career ${index + 1} rank`;
 
   const rankInput = document.createElement('input');
-  rankInput.className = 'form-input';
-  rankInput.type      = 'number';
-  rankInput.id        = `career_${index}_rank`;
-  rankInput.name      = `career-${index}-rank`;
-  rankInput.min       = '1';
-  rankInput.max       = '4';
-  rankInput.value     = index + 1;
+  rankInput.className   = 'form-input';
+  rankInput.type        = 'number';
+  rankInput.id          = `career_${index}_rank`;
+  rankInput.name        = `rank`;
+  rankInput.min         = '1';
+  rankInput.max         = '4';
+  rankInput.value       = index + 1;
   rankInput.placeholder = 'Rank';
   rankInput.setAttribute('aria-label', `Career preference ${index + 1} rank`);
 
-  // Career select
+  // Autocomplete search for career (posts DB id as career-{i}-career)
   const careerLabel = document.createElement('label');
   careerLabel.className = 'form-label sr-only';
-  careerLabel.htmlFor = `career_${index}_career`;
   careerLabel.textContent = `Career ${index + 1}`;
 
-  const select = document.createElement('select');
-  select.className = 'form-input';
-  select.id        = `career_${index}_career`;
-  select.name      = `career-${index}-career`;
-  select.setAttribute('aria-label', `Career preference ${index + 1}`);
-
-  CAREER_OPTIONS.forEach(opt => {
-    const o = document.createElement('option');
-    o.value = opt.value;
-    o.textContent = opt.label;
-    select.appendChild(o);
-  });
-
+  // Wrapper div for rank + autocomplete side-by-side
   const fields = document.createElement('div');
   fields.className = 'dynamic-list__fields';
-  fields.appendChild(rankLabel);
-  fields.appendChild(rankInput);
-  fields.appendChild(careerLabel);
-  fields.appendChild(select);
+
+  const rankWrap = document.createElement('div');
+  rankWrap.appendChild(rankLabel);
+  rankWrap.appendChild(rankInput);
+
+  const searchWrap = document.createElement('div');
+  searchWrap.appendChild(careerLabel);
+
+  // buildAutocomplete mounts itself into searchWrap
+  buildAutocomplete({
+    searchUrl : window.SEARCH_CAREERS_URL,
+    inputId   : `career_${index}_search`,
+    hiddenName: `career`,   // Django field name
+    placeholder: 'Search careers…',
+    container  : searchWrap,
+  });
+
+  fields.appendChild(rankWrap);
+  fields.appendChild(searchWrap);
 
   // Remove button
   const removeBtn = document.createElement('button');
@@ -293,28 +521,26 @@ function updateAddCareerButton () {
    DYNAMIC SUBJECT LIST (Step 4)
 ───────────────────────────────────────────────────────────────*/
 
+/** Build a single subject entry row with live-search autocomplete */
 function buildSubjectEntry (index) {
   const entry = document.createElement('div');
   entry.className = 'dynamic-list__entry';
   entry.dataset.index = index;
 
-  // Subject select
+  // Subject autocomplete (posts DB id as subject-{i}-subject)
   const subjectLabel = document.createElement('label');
   subjectLabel.className = 'form-label sr-only';
-  subjectLabel.htmlFor = `subject_${index}_subject`;
   subjectLabel.textContent = `Subject ${index + 1}`;
 
-  const select = document.createElement('select');
-  select.className = 'form-input';
-  select.id        = `subject_${index}_subject`;
-  select.name      = `subject-${index}-subject`;
-  select.setAttribute('aria-label', `Subject ${index + 1}`);
+  const subjectWrap = document.createElement('div');
+  subjectWrap.appendChild(subjectLabel);
 
-  SUBJECT_OPTIONS.forEach(opt => {
-    const o = document.createElement('option');
-    o.value = opt.value;
-    o.textContent = opt.label;
-    select.appendChild(o);
+  buildAutocomplete({
+    searchUrl : window.SEARCH_SUBJECTS_URL,
+    inputId   : `subject_${index}_search`,
+    hiddenName: `subject`,   // Django field name
+    placeholder: 'Search subjects…',
+    container  : subjectWrap,
   });
 
   // Grade input
@@ -324,13 +550,17 @@ function buildSubjectEntry (index) {
   gradeLabel.textContent = `Grade for subject ${index + 1}`;
 
   const gradeInput = document.createElement('input');
-  gradeInput.className    = 'form-input';
-  gradeInput.type         = 'text';
-  gradeInput.id           = `subject_${index}_grade`;
-  gradeInput.name         = `subject-${index}-grade`;
-  gradeInput.placeholder  = 'Grade';
-  gradeInput.maxLength    = 5;
+  gradeInput.className   = 'form-input';
+  gradeInput.type        = 'text';
+  gradeInput.id          = `grade`;
+  gradeInput.name        = `grade`;
+  gradeInput.placeholder = 'Grade';
+  gradeInput.maxLength   = 5;
   gradeInput.setAttribute('aria-label', `Grade for subject ${index + 1}`);
+
+  const gradeWrap = document.createElement('div');
+  gradeWrap.appendChild(gradeLabel);
+  gradeWrap.appendChild(gradeInput);
 
   // Active checkbox
   const activeLabel = document.createElement('label');
@@ -341,7 +571,7 @@ function buildSubjectEntry (index) {
   activeCheck.type      = 'checkbox';
   activeCheck.className = 'toggle-checkbox';
   activeCheck.id        = `subject_${index}_is_active`;
-  activeCheck.name      = `subject-${index}-is_active`;
+  activeCheck.name      = `is_active`;
   activeCheck.checked   = true;
   activeCheck.value     = 'on';
 
@@ -350,10 +580,8 @@ function buildSubjectEntry (index) {
 
   const fields = document.createElement('div');
   fields.className = 'dynamic-list__fields dynamic-list__fields--subject';
-  fields.appendChild(subjectLabel);
-  fields.appendChild(select);
-  fields.appendChild(gradeLabel);
-  fields.appendChild(gradeInput);
+  fields.appendChild(subjectWrap);
+  fields.appendChild(gradeWrap);
   fields.appendChild(activeLabel);
 
   const removeBtn = document.createElement('button');
@@ -385,15 +613,21 @@ function removeEntry (listId, indexToRemove, afterCallback) {
   const toRemove = entries.find(e => parseInt(e.dataset.index, 10) === indexToRemove);
   if (toRemove) toRemove.remove();
 
-  // Re-index remaining entries' input names
+  // Re-index remaining entries' input names and ids
   Array.from(list.children).forEach((entry, newIndex) => {
     entry.dataset.index = newIndex;
     entry.querySelectorAll('input, select').forEach(el => {
+      // Update name: career-2-rank → career-0-rank
       if (el.name) {
-        // Replace the numeric index in name, e.g. career-2-rank → career-0-rank
-        el.name = el.name.replace(/-\d+-/, `-${newIndex}-`);
-        el.id   = el.id.replace(/_\d+_/, `_${newIndex}_`);
+        // Explode by hyphen, swap the index safely, and join back
+        let parts = el.name.split('-');
+        if (parts.length >= 3) {
+          parts[1] = newIndex; 
+          el.name = parts.join('-');
+        }
       }
+      // Update id: uses both - and _ separators (career_2_rank vs career-2-rank)
+      if (el.id)   el.id   = el.id.replace(/[_-]\d+[_-]/, m => m.replace(/\d+/, newIndex));
     });
   });
 
@@ -497,20 +731,6 @@ function applyServerErrors (errors) {
 function buildFormData () {
   const form = document.getElementById('registrationForm');
   const fd   = new FormData(form); // captures CSRF token + all named inputs + file
-
-  // ── Career formset management keys ──
-  const careerCount = document.getElementById('careerList').children.length;
-  fd.set('career-TOTAL_FORMS',   careerCount);
-  fd.set('career-INITIAL_FORMS', '0');
-  fd.set('career-MIN_NUM_FORMS', '0');
-  fd.set('career-MAX_NUM_FORMS', String(MAX_CAREERS));
-
-  // ── Subject formset management keys ──
-  const subjectCount = document.getElementById('subjectList').children.length;
-  fd.set('subject-TOTAL_FORMS',   subjectCount);
-  fd.set('subject-INITIAL_FORMS', '0');
-  fd.set('subject-MIN_NUM_FORMS', '0');
-  fd.set('subject-MAX_NUM_FORMS', '1000');
 
   return fd;
 }
