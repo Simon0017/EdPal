@@ -1,0 +1,231 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="theme-dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}EdPal Staff{% endblock %}</title>
+
+  <link rel="icon" href="{% static 'core/img/edpal-logo.jpg' %}" type="image/jpeg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Shared tokens + buttons + inputs -->
+  <link rel="stylesheet" href="{% static 'accounts/css/registration.css' %}" />
+  <!-- Sidebar layout -->
+  <link rel="stylesheet" href="{% static 'core/css/staff_nav.css' %}" />
+
+  {% block extra_css %}{% endblock %}
+
+  <!-- Apply stored theme before paint to prevent flash -->
+  <script>
+    (function () {
+      if (localStorage.getItem('reg_theme') !== 'light') {
+        document.documentElement.classList.add('theme-dark');
+      } else {
+        document.documentElement.classList.remove('theme-dark');
+      }
+    })();
+  </script>
+</head>
+
+<body class="sn-body">
+
+  <!-- ══════════════ SIDEBAR ══════════════ -->
+  <aside class="sn-sidebar" id="snSidebar" role="navigation" aria-label="Staff navigation">
+
+    <!-- Brand -->
+    <div class="sn-brand">
+      <img
+        src="{% static 'core/img/edpal-logo.jpg' %}"
+        alt="EdPal logo"
+        class="sn-brand__logo"
+      />
+      <span class="sn-brand__name">EdPal</span>
+    </div>
+
+    <nav class="sn-nav">
+
+      <!-- ─ Storage ─ -->
+      <div class="sn-section">
+        <span class="sn-section__label">Storage</span>
+        <ul class="sn-nav__list" role="list">
+          <li>
+            <a href="#" class="sn-nav__item {% block nav_storage_buckets %}{% endblock %}">
+              <span class="sn-nav__icon" aria-hidden="true">🗄</span>
+              <span>Buckets</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" class="sn-nav__item {% block nav_storage_objects %}{% endblock %}">
+              <span class="sn-nav__icon" aria-hidden="true">📦</span>
+              <span>Objects</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- ─ Users ─ -->
+      <div class="sn-section">
+        <span class="sn-section__label">Users</span>
+        <ul class="sn-nav__list" role="list">
+          <li>
+            <a href="#" class="sn-nav__item {% block nav_users %}{% endblock %}">
+              <span class="sn-nav__icon" aria-hidden="true">👥</span>
+              <span>All Users</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" class="sn-nav__item {% block nav_roles %}{% endblock %}">
+              <span class="sn-nav__icon" aria-hidden="true">🔑</span>
+              <span>Roles</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- ─ Assessments ─ -->
+      <div class="sn-section">
+        <span class="sn-section__label">Assessments</span>
+        <ul class="sn-nav__list" role="list">
+          <li>
+            <a
+              href="{% url 'administer_questionnare' %}"
+              class="sn-nav__item {% block nav_questionnaires %}{% endblock %}"
+              {% block nav_questionnaires_aria %}{% endblock %}
+            >
+              <span class="sn-nav__icon" aria-hidden="true">📋</span>
+              <span>Questionnaires</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" class="sn-nav__item {% block nav_attempts %}{% endblock %}">
+              <span class="sn-nav__icon" aria-hidden="true">📊</span>
+              <span>Attempts</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- ─ Settings ─ -->
+      <div class="sn-section">
+        <span class="sn-section__label">Settings</span>
+        <ul class="sn-nav__list" role="list">
+          <li>
+            <a href="#" class="sn-nav__item {% block nav_settings %}{% endblock %}">
+              <span class="sn-nav__icon" aria-hidden="true">⚙</span>
+              <span>General</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+    </nav>
+
+    <!-- Sidebar footer: user info -->
+    <div class="sn-sidebar__footer">
+      <span class="sn-nav__icon" aria-hidden="true">👤</span>
+      <span class="sn-sidebar__username">
+        {% if request.user.is_authenticated %}{{ request.user.username }}{% else %}Staff{% endif %}
+      </span>
+    </div>
+
+  </aside>
+
+  <!-- ══════════════ MAIN AREA ══════════════ -->
+  <div class="sn-main">
+
+    <!-- Top header -->
+    <header class="sn-header" role="banner">
+
+      <!-- Hamburger (mobile only) -->
+      <button
+        id="snHamburger"
+        class="sn-hamburger"
+        aria-label="Toggle sidebar"
+        aria-expanded="false"
+        aria-controls="snSidebar"
+      >
+        <span class="sn-hamburger__bar"></span>
+        <span class="sn-hamburger__bar"></span>
+        <span class="sn-hamburger__bar"></span>
+      </button>
+
+      <h1 class="sn-header__title">{% block page_title %}Dashboard{% endblock %}</h1>
+
+      <div class="sn-header__actions">
+        <!-- Theme toggle — same component as login/registration -->
+        <button
+          id="themeToggle"
+          class="theme-toggle"
+          aria-label="Toggle light / dark theme"
+        >
+          <span class="theme-toggle__icon theme-toggle__icon--sun" aria-hidden="true">☀</span>
+          <span class="theme-toggle__icon theme-toggle__icon--moon" aria-hidden="true">☽</span>
+        </button>
+      </div>
+
+    </header>
+
+    <!-- Page content -->
+    <main class="sn-content" id="snContent">
+      {% block content %}{% endblock %}
+    </main>
+
+  </div><!-- /.sn-main -->
+
+  <!-- Overlay for mobile sidebar -->
+  <div class="sn-overlay" id="snOverlay" aria-hidden="true"></div>
+
+  <!-- Sidebar + theme JS (inline — tiny, no separate file needed) -->
+  <script>
+    (function () {
+      const THEME_KEY = 'reg_theme';
+      const html      = document.documentElement;
+
+      /* Theme toggle */
+      document.getElementById('themeToggle').addEventListener('click', function () {
+        const isDark = html.classList.toggle('theme-dark');
+        localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+      });
+
+      /* Hamburger / sidebar */
+      const hamburger = document.getElementById('snHamburger');
+      const sidebar   = document.getElementById('snSidebar');
+      const overlay   = document.getElementById('snOverlay');
+
+      function openSidebar () {
+        sidebar.classList.add('sn-sidebar--open');
+        overlay.classList.add('sn-overlay--visible');
+        hamburger.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeSidebar () {
+        sidebar.classList.remove('sn-sidebar--open');
+        overlay.classList.remove('sn-overlay--visible');
+        hamburger.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+      }
+
+      hamburger.addEventListener('click', function () {
+        sidebar.classList.contains('sn-sidebar--open') ? closeSidebar() : openSidebar();
+      });
+
+      overlay.addEventListener('click', closeSidebar);
+
+      /* Close on Escape */
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeSidebar();
+      });
+    })();
+  </script>
+
+  {% block extra_js %}{% endblock %}
+
+</body>
+</html>

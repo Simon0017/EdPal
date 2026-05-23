@@ -83,6 +83,10 @@ class RegistrationView(View):
             subject.save()
 
             # send welcome email
+            login_path = reverse("user_login")
+            url = request.build_absolute_uri(login_path)
+
+            send_welcome_email.delay(user,url)
 
             # login the user
             auth  = authenticate(request,username=user.username,password=password)
@@ -169,6 +173,7 @@ class ForgotPassword(View):
         reset_url = request.build_absolute_uri(reset_path)
 
         # send the reset url in email via tasks
+        send_reset_password_email.delay(user,reset_url)
 
         return JsonResponse({
             "success":True,

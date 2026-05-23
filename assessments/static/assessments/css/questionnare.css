@@ -1,0 +1,431 @@
+/*
+ * assessments/static/assessments/css/questionnare.css
+ * Scoped to .assessments-questionnare. All tokens from registration.css.
+ */
+
+/* ══════════════════════════════════════════════════
+   WRAPPER
+══════════════════════════════════════════════════ */
+.qn-wrap {
+  max-width: 860px;
+  margin: 0 auto;
+  padding-bottom: var(--spacing-3xl);
+  position: relative;
+}
+
+/* ══════════════════════════════════════════════════
+   STEPPER
+══════════════════════════════════════════════════ */
+.qn-stepper {
+  margin-bottom: var(--spacing-xl);
+}
+
+.qn-stepper__list {
+  display: flex;
+  justify-content: space-between;
+  list-style: none;
+  margin: 0 0 var(--spacing-sm);
+  padding: 0;
+}
+
+.qn-stepper__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.qn-stepper__dot {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    border-color var(--transition-base),
+    background var(--transition-base),
+    color var(--transition-base),
+    box-shadow var(--transition-base);
+}
+
+.qn-stepper__label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Active */
+.qn-stepper__item--active .qn-stepper__dot {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(232,93,4,.4);
+}
+
+.qn-stepper__item--active .qn-stepper__label {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Done */
+.qn-stepper__item--done .qn-stepper__dot {
+  border-color: var(--color-success);
+  background: var(--color-success);
+  color: #fff;
+}
+
+.qn-stepper__bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-top: 0.375rem;
+}
+
+.qn-stepper__fill {
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-slow) cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 0 6px rgba(232,93,4,.5);
+}
+
+/* ══════════════════════════════════════════════════
+   REMAINING POINTS WIDGET
+══════════════════════════════════════════════════ */
+.qn-points-widget {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 0.375rem 0.875rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  font-size: 0.8125rem;
+  margin-bottom: var(--spacing-lg);
+  transition: border-color var(--transition-fast);
+}
+
+.qn-points-widget__label {
+  color: var(--text-muted);
+}
+
+.qn-points-widget__value {
+  font-weight: 700;
+  color: var(--color-primary);
+  font-size: 1rem;
+  font-family: var(--font-mono);
+  min-width: 2.5ch;
+  text-align: right;
+}
+
+.qn-points-widget--warn .qn-points-widget__value  { color: #F59E0B; }
+.qn-points-widget--over .qn-points-widget__value  { color: var(--color-error); }
+.qn-points-widget--over                           { border-color: var(--color-error); }
+
+.qn-points-widget__max {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ══════════════════════════════════════════════════
+   STATUS BANNER
+══════════════════════════════════════════════════ */
+.qn-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  margin-bottom: var(--spacing-md);
+  animation: qnStatusIn 0.2s ease;
+}
+
+.qn-status.hidden          { display: none !important; }
+.qn-status--error          { background: rgba(239,68,68,.1);  border: 1px solid rgba(239,68,68,.3); color: var(--color-error); }
+.qn-status--success        { background: rgba(34,197,94,.1);  border: 1px solid rgba(34,197,94,.3); color: var(--color-success); }
+
+@keyframes qnStatusIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ══════════════════════════════════════════════════
+   STEP CARDS
+══════════════════════════════════════════════════ */
+.qn-step {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.qn-step.hidden { display: none !important; }
+
+.qn-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+  animation: qnCardIn 0.3s cubic-bezier(0.2, 0.8, 0.4, 1) both;
+}
+
+@keyframes qnCardIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.qn-card__title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  display: block;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border);
+}
+
+.qn-step-hint {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-bottom: var(--spacing-md);
+}
+
+/* ── 2-column grid inside cards ── */
+.qn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+.qn-col-full { grid-column: 1 / -1; }
+
+.qn-toggle-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* ══════════════════════════════════════════════════
+   DYNAMIC LIST ENTRIES (tags / questions / choices)
+══════════════════════════════════════════════════ */
+.qn-dynamic-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.qn-entry {
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  animation: qnEntryIn 0.2s ease;
+  position: relative;
+}
+
+@keyframes qnEntryIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.qn-entry__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-sm);
+}
+
+.qn-entry__title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.qn-entry__remove {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.25rem;
+  line-height: 1;
+  transition: color var(--transition-fast);
+  border-radius: var(--radius-sm);
+}
+
+.qn-entry__remove:hover       { color: var(--color-error); }
+.qn-entry__remove:focus-visible { outline: 2px solid var(--color-error); }
+
+.qn-entry__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+}
+
+.qn-entry__col-full { grid-column: 1 / -1; }
+
+/* ── JSON / numeric config textarea ── */
+.qn-json-editor {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 5rem;
+}
+
+/* ── Question type badge shown in choice step ── */
+.qn-question-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: rgba(232,93,4,.1);
+  color: var(--color-primary);
+  border: 1px solid rgba(232,93,4,.2);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Add button */
+.qn-add-btn {
+  margin-top: var(--spacing-xs);
+}
+
+/* ══════════════════════════════════════════════════
+   REVIEW PANEL (Step 5)
+══════════════════════════════════════════════════ */
+.qn-review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.qn-review__section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.qn-review__section-title {
+  background: var(--surface-hover);
+  padding: 0.5rem var(--spacing-md);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  border-bottom: 1px solid var(--border);
+}
+
+.qn-review__row {
+  display: flex;
+  gap: var(--spacing-md);
+  padding: 0.5rem var(--spacing-md);
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.qn-review__row:last-child { border-bottom: none; }
+
+.qn-review__key {
+  color: var(--text-muted);
+  min-width: 160px;
+  flex-shrink: 0;
+}
+
+.qn-review__val {
+  color: var(--text);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+/* ══════════════════════════════════════════════════
+   NAV BUTTONS ROW
+══════════════════════════════════════════════════ */
+.qn-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--border);
+  margin-top: var(--spacing-md);
+}
+
+/* ══════════════════════════════════════════════════
+   LOADER OVERLAY
+══════════════════════════════════════════════════ */
+.qn-loader {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+  z-index: 200;
+}
+
+.qn-loader.hidden { display: none !important; }
+
+.qn-loader__spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 3px solid rgba(232,93,4,.2);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: qnSpin 0.75s linear infinite;
+  box-shadow: 0 0 20px rgba(232,93,4,.3);
+}
+
+@keyframes qnSpin {
+  to { transform: rotate(360deg); }
+}
+
+.qn-loader__text {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* ══════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .qn-grid,
+  .qn-entry__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .qn-col-full,
+  .qn-entry__col-full {
+    grid-column: auto;
+  }
+
+  .qn-card {
+    padding: var(--spacing-md);
+  }
+
+  .qn-stepper__label {
+    display: none;
+  }
+}

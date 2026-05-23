@@ -1,0 +1,174 @@
+{% extends "core/staff_nav.html" %}
+{% load static %}
+
+{% block title %}EdPal| New Questionnaire{% endblock %}
+{% block page_title %}New Questionnaire{% endblock %}
+
+{% block nav_questionnaires %}sn-nav__item--active{% endblock %}
+{% block nav_questionnaires_aria %}aria-current="page"{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'assessments/css/questionnare.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="qn-wrap assessments-questionnare">
+
+  <!-- ══ STEPPER ══ -->
+  <nav class="qn-stepper" aria-label="Form steps">
+    <ol class="qn-stepper__list">
+      {% for label in steps %}
+      <li class="qn-stepper__item" data-step="{{ forloop.counter }}">
+        <span class="qn-stepper__dot">{{ forloop.counter }}</span>
+        <span class="qn-stepper__label">{{ label }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+    <div class="qn-stepper__bar" role="progressbar" aria-valuemin="1" aria-valuemax="5" aria-valuenow="1">
+      <div class="qn-stepper__fill" id="qnStepperFill" style="width:20%"></div>
+    </div>
+  </nav>
+
+  <!-- ══ REMAINING POINTS WIDGET ══ -->
+  <div class="qn-points-widget" id="qnPointsWidget" aria-live="polite">
+    <span class="qn-points-widget__label">Points remaining</span>
+    <span class="qn-points-widget__value" id="qnPointsRemaining">—</span>
+    <span class="qn-points-widget__max" id="qnPointsMax"></span>
+  </div>
+
+  <!-- ══ GLOBAL STATUS BANNER ══ -->
+  <div id="qnStatus" class="qn-status hidden" role="alert" aria-live="assertive"></div>
+
+  <!-- ══ FORM ══ -->
+  <form id="qnForm" novalidate aria-label="Create questionnaire">
+    {% csrf_token %}
+
+    <!-- ────────────────────────────────────────────
+         STEP 1 — QuestionnaireForm
+    ──────────────────────────────────────────── -->
+    <fieldset id="qnStep1" class="qn-step qn-card" data-step="1">
+      <legend class="qn-card__title">Questionnaire Details</legend>
+
+      <div class="qn-grid">
+
+        <div class="form-group qn-col-full">
+          <label class="form-label" for="id_title">Title <span class="required-star">*</span></label>
+          <input class="form-input" type="text" id="id_title" name="title" required placeholder="e.g. Career Readiness Survey" aria-describedby="err_title" />
+          <span id="err_title" class="form-error" role="alert" aria-live="polite"></span>
+        </div>
+
+        <div class="form-group qn-col-full">
+          <label class="form-label" for="id_description">Description</label>
+          <textarea class="form-input form-textarea" id="id_description" name="description" rows="3" placeholder="Brief overview of this questionnaire"></textarea>
+        </div>
+
+        <div class="form-group qn-col-full">
+          <label class="form-label" for="id_instructions">Instructions</label>
+          <textarea class="form-input form-textarea" id="id_instructions" name="instructions" rows="4" placeholder="What should participants know before starting?"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="id_status">Status <span class="required-star">*</span></label>
+          <select class="form-input" id="id_status" name="status" required aria-describedby="err_status">
+            <option value="DRAFT">Draft</option>
+            <option value="PUBLISHED">Published</option>
+            <option value="ARCHIVED">Archived</option>
+          </select>
+          <span id="err_status" class="form-error" role="alert" aria-live="polite"></span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="id_max_score">Max Score <span class="required-star">*</span></label>
+          <input class="form-input" type="number" id="id_max_score" name="max_score" min="1" step="1" placeholder="100" required aria-describedby="err_max_score" />
+          <span id="err_max_score" class="form-error" role="alert" aria-live="polite"></span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="id_time_limit_minutes">Time Limit (minutes)</label>
+          <input class="form-input" type="number" id="id_time_limit_minutes" name="time_limit_minutes" min="1" step="1" placeholder="60" />
+        </div>
+
+        <div class="form-group qn-toggle-group">
+          <label class="form-label" for="id_is_randomised">Randomise questions?</label>
+          <input class="toggle-checkbox" type="checkbox" id="id_is_randomised" name="is_randomised" value="on" />
+        </div>
+
+      </div>
+    </fieldset>
+
+    <!-- ────────────────────────────────────────────
+         STEP 2 — QuestionnaireTagForm (repeated)
+    ──────────────────────────────────────────── -->
+    <fieldset id="qnStep2" class="qn-step qn-card hidden" data-step="2">
+      <legend class="qn-card__title">Tags</legend>
+      <p class="qn-step-hint">Add one or more tags. Only one tag can be primary.</p>
+
+      <div id="tagList" class="qn-dynamic-list" aria-label="Tags"></div>
+
+      <button type="button" id="addTag" class="btn-outline qn-add-btn">+ Add tag</button>
+      <span id="err_tags" class="form-error block mt-2" role="alert" aria-live="polite"></span>
+    </fieldset>
+
+    <!-- ────────────────────────────────────────────
+         STEP 3 — QuestionForm (repeated, no prefixes)
+         Backend: request.POST.getlist('question_text') etc.
+    ──────────────────────────────────────────── -->
+    <fieldset id="qnStep3" class="qn-step qn-card hidden" data-step="3">
+      <legend class="qn-card__title">Questions</legend>
+      <p class="qn-step-hint">Add questions. Weight totals must not exceed Max Score.</p>
+
+      <div id="questionList" class="qn-dynamic-list" aria-label="Questions"></div>
+
+      <button type="button" id="addQuestion" class="btn-outline qn-add-btn">+ Add question</button>
+      <span id="err_questions" class="form-error block mt-2" role="alert" aria-live="polite"></span>
+    </fieldset>
+
+    <!-- ────────────────────────────────────────────
+         STEP 4 — AnswerChoiceForm (repeated)
+         choice_question_index links a choice to its question by position.
+    ──────────────────────────────────────────── -->
+    <fieldset id="qnStep4" class="qn-step qn-card hidden" data-step="4">
+      <legend class="qn-card__title">Answer Choices</legend>
+      <p class="qn-step-hint">Add choices per question. MCQ needs exactly 1 correct answer; Multi-select needs ≥ 2.</p>
+
+      <div id="choiceList" class="qn-dynamic-list" aria-label="Answer choices"></div>
+
+      <button type="button" id="addChoice" class="btn-outline qn-add-btn">+ Add choice</button>
+      <span id="err_choices" class="form-error block mt-2" role="alert" aria-live="polite"></span>
+    </fieldset>
+
+    <!-- ────────────────────────────────────────────
+         STEP 5 — Review + Submit
+    ──────────────────────────────────────────── -->
+    <fieldset id="qnStep5" class="qn-step qn-card hidden" data-step="5">
+      <legend class="qn-card__title">Review</legend>
+      <div id="qnReviewContent" class="qn-review" aria-live="polite"></div>
+    </fieldset>
+
+    <!-- ══ NAV BUTTONS ══ -->
+    <div class="qn-nav" id="qnNav">
+      <button type="button" id="qnBtnBack"   class="btn-ghost"   disabled>← Back</button>
+      <button type="button" id="qnBtnNext"   class="btn-primary">Next →</button>
+      <button type="submit" id="qnBtnSubmit" class="btn-primary btn-submit hidden">
+        <span class="btn-submit__text">Create Questionnaire</span>
+        <span class="btn-submit__spinner" aria-hidden="true"></span>
+      </button>
+    </div>
+
+  </form><!-- /#qnForm -->
+
+  <!-- ══ LOADER OVERLAY ══ -->
+  <div id="qnLoader" class="qn-loader hidden" aria-live="assertive" aria-label="Submitting…">
+    <div class="qn-loader__spinner"></div>
+    <p class="qn-loader__text">Creating questionnaire…</p>
+  </div>
+
+</div><!-- /.qn-wrap -->
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    window.QN_URL = "{% url 'administer_questionnare' %}";
+  </script>
+  <script src="{% static 'assessments/js/questionnare.js' %}"></script>
+{% endblock %}
