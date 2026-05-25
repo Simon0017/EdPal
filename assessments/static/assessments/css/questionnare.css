@@ -429,3 +429,37 @@
     display: none;
   }
 }
+
+
+.qn-tag-search-wrap  { position: relative; }
+
+.qn-tag-dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 60;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+  max-height: 200px; overflow-y: auto; display: none;
+}
+.qn-tag-dropdown.open { display: block; }
+
+.qn-tag-option {
+  padding: 0.5rem 0.875rem; cursor: pointer;
+  font-size: 0.875rem; color: var(--text);
+  transition: background var(--transition-fast);
+}
+.qn-tag-option:hover,
+.qn-tag-option.focused       { background: var(--surface-hover); color: var(--color-primary); }
+.qn-tag-option--create       { color: var(--color-accent); font-style: italic; }
+.qn-tag-option--empty        { color: var(--text-muted); cursor: default; }
+.qn-tag-option--loading      { color: var(--text-muted); cursor: default; font-style: italic; }
+
+.qn-tag-chip {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  background: rgba(232,93,4,.1); border: 1px solid rgba(232,93,4,.25);
+  border-radius: var(--radius-full); font-size: 0.8rem;
+  color: var(--color-primary); font-weight: 500; margin-top: 0.25rem;
+}
+.qn-tag-chip__remove {
+  background: none; border: none; cursor: pointer;
+  color: inherit; font-size: 0.9rem; line-height: 1; padding: 0;
+}

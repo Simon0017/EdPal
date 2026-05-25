@@ -67,8 +67,8 @@ html.theme-dark {
 
 .sn-brand__logo {
   width: 2rem;
-  height: 2rem;
-  border-radius: var(--radius-md);
+  height: 2.2rem;
+  border-radius: 0%;
   object-fit: cover;
   flex-shrink: 0;
 }

@@ -16,7 +16,7 @@ class Tag(models.Model):
         child: Creativity
     """
     title       = models.CharField(max_length=100)
-    slug        = models.SlugField(max_length=100, unique=True)
+    slug        = models.SlugField(max_length=100, unique=True,blank=True)
     description = models.TextField(blank=True)
     parent      = models.ForeignKey(
         "self",
@@ -25,7 +25,7 @@ class Tag(models.Model):
         related_name="children"
     )
 
-    order       = models.PositiveSmallIntegerField(default=0)
+    order       = models.PositiveSmallIntegerField(default=0,blank=True)
     color_hex   = models.CharField(max_length=7, blank=True)  # UI hint
 
     class Meta:

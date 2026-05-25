@@ -1,7 +1,7 @@
 {% extends "core/staff_nav.html" %}
 {% load static %}
 
-{% block title %}EdPal| New Questionnaire{% endblock %}
+{% block title %}EdPal | New Questionnaire{% endblock %}
 {% block page_title %}New Questionnaire{% endblock %}
 
 {% block nav_questionnaires %}sn-nav__item--active{% endblock %}
@@ -169,6 +169,7 @@
 {% block extra_js %}
   <script>
     window.QN_URL = "{% url 'administer_questionnare' %}";
+    window.TAG_URL = "{% url 'tags' %}";
   </script>
   <script src="{% static 'assessments/js/questionnare.js' %}"></script>
 {% endblock %}

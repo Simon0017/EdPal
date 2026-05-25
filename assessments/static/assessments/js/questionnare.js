@@ -28,6 +28,162 @@ let currentStep   = 1;
 /* Question types that have choices */
 const CHOICE_TYPES = new Set(['MCQ', 'MULTI_SELECT', 'LIKERT', 'RANKING']);
 
+
+// ── tag debounce 
+function debounce(fn, wait = 350) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
+}
+
+
+function buildTagAutocomplete(container, entryIndex) {
+  // Hidden input carries the DB id — this is what gets POSTed as `tag`
+  const hiddenInput = document.createElement('input');
+  hiddenInput.type  = 'hidden';
+  hiddenInput.name  = 'tag';      
+  hiddenInput.value = '';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'qn-tag-search-wrap';
+
+  const searchInput = document.createElement('input');
+  searchInput.type        = 'text';
+  searchInput.className   = 'form-input';
+  searchInput.placeholder = 'Search or create a tag…';
+  searchInput.autocomplete = 'off';
+  searchInput.id          = `tag_${entryIndex}_search`;
+
+  const chipWrap = document.createElement('div');
+  chipWrap.style.display = 'none';
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'qn-tag-dropdown';
+
+  wrap.appendChild(searchInput);
+  wrap.appendChild(chipWrap);
+  wrap.appendChild(dropdown);
+  wrap.appendChild(hiddenInput);
+  container.appendChild(wrap);
+
+  let focusedIdx = -1;
+
+  function selectTag(id, name) {
+    hiddenInput.value         = id;
+    searchInput.style.display = 'none';
+    dropdown.classList.remove('open');
+    // Show chip
+    chipWrap.style.display = 'block';
+    chipWrap.innerHTML = '';
+    const chip = document.createElement('span');
+    chip.className = 'qn-tag-chip';
+    chip.innerHTML =
+      `${name} <button type="button" class="qn-tag-chip__remove" aria-label="Remove tag">✕</button>`;
+    chip.querySelector('button').addEventListener('click', () => {
+      hiddenInput.value         = '';
+      chipWrap.style.display    = 'none';
+      chipWrap.innerHTML        = '';
+      searchInput.style.display = '';
+      searchInput.value         = '';
+      searchInput.focus();
+    });
+    chipWrap.appendChild(chip);
+  }
+
+  async function createTag(name) {
+    dropdown.innerHTML = '<div class="qn-tag-option qn-tag-option--loading">Creating tag…</div>';
+    dropdown.classList.add('open');
+    try {
+      const fd = new FormData();
+      fd.append('title', name);
+      const csrf = document.querySelector('input[name="csrfmiddlewaretoken"]');
+      if (csrf) fd.append('csrfmiddlewaretoken', csrf.value);
+
+      const res  = await fetch(window.TAG_URL, { method: 'POST', body: fd,
+        headers: { 'X-CSRFToken': csrf ? csrf.value : '' } });
+      const data = await res.json();
+
+      if (data.success && data.id) {
+        dropdown.classList.remove('open');
+        selectTag(data.id, data.name || name);
+      } else {
+        dropdown.innerHTML = `<div class="qn-tag-option qn-tag-option--empty">${data.error || 'Could not create tag.'}</div>`;
+      }
+    } catch (e) {
+      dropdown.innerHTML = '<div class="qn-tag-option qn-tag-option--empty">Network error.</div>';
+    }
+  }
+
+  function renderOptions(items, query) {
+    dropdown.innerHTML = '';
+    focusedIdx = -1;
+
+    items.forEach(({ id, name }) => {
+      const opt = document.createElement('div');
+      opt.className   = 'qn-tag-option';
+      opt.dataset.id  = id;
+      opt.dataset.name = name;
+      opt.textContent = name;
+      opt.addEventListener('mousedown', e => { e.preventDefault(); selectTag(id, name); });
+      dropdown.appendChild(opt);
+    });
+
+    // Always offer "create" option at the bottom
+    if (query) {
+      const create = document.createElement('div');
+      create.className = 'qn-tag-option qn-tag-option--create';
+      create.textContent = `+ Create new tag "${query}"`;
+      create.addEventListener('mousedown', e => { e.preventDefault(); createTag(query); });
+      dropdown.appendChild(create);
+    }
+
+    if (!items.length && !query) {
+      const empty = document.createElement('div');
+      empty.className = 'qn-tag-option qn-tag-option--empty';
+      empty.textContent = 'No results.';
+      dropdown.appendChild(empty);
+    }
+
+    dropdown.classList.add('open');
+  }
+
+  const doSearch = debounce(async (query) => {
+    if (!query || query.length < 2) { dropdown.classList.remove('open'); return; }
+
+    dropdown.innerHTML = '<div class="qn-tag-option qn-tag-option--loading">Searching…</div>';
+    dropdown.classList.add('open');
+
+    try {
+      const res  = await fetch(`${window.TAG_URL}?query=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      // Expects: { success: true, message: { id: name, ... } } OR array [{id, name}]
+      const items = data.success
+        ? (Array.isArray(data.message)
+            ? data.message.map(i => ({ id: i.id, name: i.name }))
+            : Object.entries(data.message).map(([id, name]) => ({ id, name })))
+        : [];
+      renderOptions(items, query);
+    } catch {
+      dropdown.innerHTML = '<div class="qn-tag-option qn-tag-option--empty">Search failed.</div>';
+    }
+  }, 350);
+
+  searchInput.addEventListener('input', () => doSearch(searchInput.value.trim()));
+
+  // Keyboard nav
+  searchInput.addEventListener('keydown', e => {
+    const opts = dropdown.querySelectorAll('.qn-tag-option:not(.qn-tag-option--empty):not(.qn-tag-option--loading)');
+    if (e.key === 'ArrowDown') { e.preventDefault(); focusedIdx = Math.min(focusedIdx + 1, opts.length - 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); focusedIdx = Math.max(focusedIdx - 1, 0); }
+    else if (e.key === 'Enter' && focusedIdx >= 0) { e.preventDefault(); opts[focusedIdx].dispatchEvent(new MouseEvent('mousedown')); return; }
+    else if (e.key === 'Escape') { dropdown.classList.remove('open'); return; }
+    opts.forEach((o, i) => o.classList.toggle('focused', i === focusedIdx));
+  });
+
+  searchInput.addEventListener('blur', () => setTimeout(() => dropdown.classList.remove('open'), 150));
+
+  return { hiddenInput };
+}
+
 /* ─────────────────────────────────────────────────────────────
    STEPPER
 ───────────────────────────────────────────────────────────────*/
@@ -207,10 +363,11 @@ function buildTagEntry (index) {
   const grid = document.createElement('div');
   grid.className = 'qn-entry__grid';
 
-  /* tag (text) */
-  const tagInput = makeInput({ name: 'tag', placeholder: 'e.g. mathematics', required: true });
-  tagInput.id = `tag_${index}_tag`;
-  grid.appendChild(makeFormGroup(makeLabel('Tag *', tagInput.id), tagInput));
+  const tagSearchGroup = document.createElement('div');
+  tagSearchGroup.className = 'form-group';
+  tagSearchGroup.appendChild(makeLabel('Tag *'));
+  buildTagAutocomplete(tagSearchGroup, index);   // mounts widget + hidden input
+  grid.appendChild(tagSearchGroup);
 
   /* coupling_strength */
   const csInput = makeInput({ type: 'number', name: 'coupling_strength', placeholder: '0.0 – 1.0', min: '0', max: '1', step: '0.01' });
@@ -584,6 +741,18 @@ function validateStep () {
       return false;
     }
     document.getElementById('err_status').textContent = '';
+  }
+
+  if (currentStep === 2) {
+    const hiddens = document.querySelectorAll('#tagList input[name="tag"]');
+    let tagOk = true;
+    hiddens.forEach((h, i) => {
+      if (!h.value) { tagOk = false; }
+    });
+    if (!tagOk) {
+      showStatus('Each tag must be selected or created before proceeding.', 'error');
+      return false;
+    }
   }
 
   if (currentStep === 3) {

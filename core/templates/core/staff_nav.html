@@ -19,6 +19,9 @@
   <!-- Sidebar layout -->
   <link rel="stylesheet" href="{% static 'core/css/staff_nav.css' %}" />
 
+  <!-- Fontawseone icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
   {% block extra_css %}{% endblock %}
 
   <!-- Apply stored theme before paint to prevent flash -->
@@ -50,44 +53,6 @@
 
     <nav class="sn-nav">
 
-      <!-- ─ Storage ─ -->
-      <div class="sn-section">
-        <span class="sn-section__label">Storage</span>
-        <ul class="sn-nav__list" role="list">
-          <li>
-            <a href="#" class="sn-nav__item {% block nav_storage_buckets %}{% endblock %}">
-              <span class="sn-nav__icon" aria-hidden="true">🗄</span>
-              <span>Buckets</span>
-            </a>
-          </li>
-          <li>
-            <a href="#" class="sn-nav__item {% block nav_storage_objects %}{% endblock %}">
-              <span class="sn-nav__icon" aria-hidden="true">📦</span>
-              <span>Objects</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-
-      <!-- ─ Users ─ -->
-      <div class="sn-section">
-        <span class="sn-section__label">Users</span>
-        <ul class="sn-nav__list" role="list">
-          <li>
-            <a href="#" class="sn-nav__item {% block nav_users %}{% endblock %}">
-              <span class="sn-nav__icon" aria-hidden="true">👥</span>
-              <span>All Users</span>
-            </a>
-          </li>
-          <li>
-            <a href="#" class="sn-nav__item {% block nav_roles %}{% endblock %}">
-              <span class="sn-nav__icon" aria-hidden="true">🔑</span>
-              <span>Roles</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-
       <!-- ─ Assessments ─ -->
       <div class="sn-section">
         <span class="sn-section__label">Assessments</span>
@@ -98,13 +63,13 @@
               class="sn-nav__item {% block nav_questionnaires %}{% endblock %}"
               {% block nav_questionnaires_aria %}{% endblock %}
             >
-              <span class="sn-nav__icon" aria-hidden="true">📋</span>
-              <span>Questionnaires</span>
+              <span class="sn-nav__icon" aria-hidden="true"><i class="fa fa-question-circle" aria-hidden="true"></i></span>
+              <span>Create Questionnaires</span>
             </a>
           </li>
           <li>
             <a href="#" class="sn-nav__item {% block nav_attempts %}{% endblock %}">
-              <span class="sn-nav__icon" aria-hidden="true">📊</span>
+              <span class="sn-nav__icon" aria-hidden="true"><i class="fa fa-user-plus" aria-hidden="true"></i></span>
               <span>Attempts</span>
             </a>
           </li>

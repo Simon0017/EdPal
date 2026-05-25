@@ -9,11 +9,20 @@ from django.shortcuts import get_object_or_404
 from django.http import HttpRequest,JsonResponse
 
 from core.decorators import outer_exception_handler
-from .forms import *
+from .forms import (
+    QuestionForm,
+    QuestionnaireForm,
+    QuestionnaireTagForm,
+    AnswerChoiceForm
+)
 from .models import *
 
 logger = logging.getLogger(__name__)
 
+
+'''
+CBV(s)
+'''
 class AdminQuestinnare(View):
     '''Provides crud operations for staff to adminiter the questionare and questions'''
     template_name = "assessments/questionnare.html"
@@ -29,4 +38,17 @@ class AdminQuestinnare(View):
     @method_decorator(login_required)
     @method_decorator(outer_exception_handler(logger))
     def post(self,request:HttpRequest,*args,**kwargs):
-        pass
+        questionnare_form = Questionnaire(request.POST)
+        tag_form = QuestionnaireTag(request.POST)
+        choice_form = AnswerChoiceForm(request.POST)
+        questions_form = QuestionForm(request.POST)
+
+
+        
+        return JsonResponse(
+            {
+                "success":True,
+                "message":"Questionnare created"
+            },status = status.HTTP_201_CREATED
+        )
+
