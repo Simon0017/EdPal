@@ -765,6 +765,16 @@ function validateStep () {
     const maxScore = parseFloat(document.getElementById('id_max_score').value) || 0;
     const totalWeight = Array.from(document.querySelectorAll('input[name="weight"]'))
       .reduce((s, el) => s + (parseFloat(el.value) || 0), 0);
+    
+    // Ensure every question has weight and max_points filled
+    let weightOk = true;
+    document.querySelectorAll('#questionList .qn-entry').forEach((q, i) => {
+      const w  = q.querySelector('input[name="weight"]').value.trim();
+      const mp = q.querySelector('input[name="max_points"]').value.trim();
+      if (!w)  { showStatus(`Question ${i + 1}: Weight is required.`,     'error'); weightOk = false; }
+      if (!mp) { showStatus(`Question ${i + 1}: Max points is required.`, 'error'); weightOk = false; }
+    });
+    if (!weightOk) return false;
 
     if (maxScore && totalWeight > maxScore) {
       showStatus(`Total weight (${totalWeight}) exceeds max score (${maxScore}). Adjust weights before continuing.`, 'error');
@@ -891,7 +901,7 @@ async function submitForm () {
 
     if (response.status === 201 || response.ok) {
       showStatus('Questionnaire created successfully! Redirecting…', 'success');
-      setTimeout(() => { window.location.href = window.QN_URL; }, 1800);
+      // setTimeout(() => { window.location.href = window.QN_URL; }, 1800);
 
     } else {
       let data = {};

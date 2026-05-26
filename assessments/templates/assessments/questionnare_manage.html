@@ -1,0 +1,242 @@
+{% extends "core/staff_nav.html" %}
+{% load static %}
+
+{% block title %}EdPal | Questionnaires{% endblock %}
+{% block page_title %} Manage Questionnaires{% endblock %}
+{% block nav_questionnaires %}sn-nav__item--active{% endblock %}
+{% block nav_questionnaires_aria %}aria-current="page"{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'assessments/css/questionnaire_manage.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="qm-page" id="qmPage">
+
+  <!-- ══ CSRF token — JS reads this for POST/fetch headers ══ -->
+  <form id="qmCsrfForm" style="display:none">{% csrf_token %}</form>
+
+  <!-- Inject URLs + initial list data for JS -->
+  <script>
+    window.QM_LIST_URL   = "{% url 'questionnare_list' %}";
+    window.QM_DETAIL_URL = "{% url 'questionnare_detail' pk=0 %}".replace('/0/', '/{id}/');
+    window.QM_SAVE_URL   = window.QM_DETAIL_URL; /* same endpoint, POST method */
+    /* Optional: pass server-rendered list to avoid initial AJAX round-trip.
+       Set this in your view context as `questionnaires_json`.
+       window.QM_INITIAL = {{ questionnaires_json|safe }}; */
+  </script>
+
+  <!-- ══════════════════════════════
+       CARD GRID VIEW (default)
+  ══════════════════════════════ -->
+  <div class="qm-grid-view" id="qmGridView">
+
+    <!-- Toolbar -->
+    <div class="qm-toolbar">
+      <div class="qm-toolbar__left">
+        <h2 class="qm-toolbar__heading">All Questionnaires</h2>
+        <span class="qm-toolbar__count" id="qmGridCount"></span>
+      </div>
+      <div class="qm-toolbar__right">
+        <!-- Search -->
+        <div class="qm-search-wrap">
+          <input
+            type="search"
+            id="qmSearch"
+            class="form-input qm-search"
+            placeholder="Search questionnaires…"
+            aria-label="Search questionnaires"
+          />
+        </div>
+        <!-- Status filter -->
+        <select id="qmStatusFilter" class="form-input qm-filter" aria-label="Filter by status">
+          <option value="">All statuses</option>
+          <option value="DRAFT">Draft</option>
+          <option value="PUBLISHED">Published</option>
+          <option value="ARCHIVED">Archived</option>
+        </select>
+        <!-- View toggle -->
+        <div class="qm-view-toggle" role="group" aria-label="View mode">
+          <button id="qmBtnGrid" class="qm-view-btn qm-view-btn--active" aria-label="Grid view" title="Grid view">
+            <span aria-hidden="true">⊞</span>
+          </button>
+          <button id="qmBtnList" class="qm-view-btn" aria-label="List view" title="List view">
+            <span aria-hidden="true">☰</span>
+          </button>
+        </div>
+        <!-- New questionnaire -->
+        <a href="{% url 'administer_questionnare' %}" class="btn-primary qm-btn-new">+ New</a>
+      </div>
+    </div>
+
+    <!-- Card container — JS switches between grid/list via CSS class -->
+    <div class="qm-cards qm-cards--grid" id="qmCards" role="list" aria-label="Questionnaire list">
+      <!-- Skeleton placeholders shown while loading -->
+      <div class="qm-skeleton" aria-hidden="true"></div>
+      <div class="qm-skeleton" aria-hidden="true"></div>
+      <div class="qm-skeleton" aria-hidden="true"></div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="qm-empty hidden" id="qmEmpty">
+      <span class="qm-empty__icon" aria-hidden="true">📋</span>
+      <p class="qm-empty__text">No questionnaires found.</p>
+      <a href="{% url 'administer_questionnare' %}" class="btn-primary">Create one now</a>
+    </div>
+
+  </div><!-- /#qmGridView -->
+
+  <!-- ══════════════════════════════
+       SPLIT VIEW (on card click)
+  ══════════════════════════════ -->
+  <div class="qm-split hidden" id="qmSplit">
+
+    <!-- ── LEFT PANEL: slim list ── -->
+    <aside class="qm-split__left" id="qmSplitLeft" role="navigation" aria-label="Questionnaire navigation">
+
+      <div class="qm-split-left__toolbar">
+        <button id="qmBtnCloseSplit" class="btn-ghost qm-btn-back" aria-label="Back to grid">← All</button>
+        <input
+          type="search"
+          id="qmSplitSearch"
+          class="form-input qm-split-search"
+          placeholder="Filter…"
+          aria-label="Filter list"
+        />
+      </div>
+
+      <ul class="qm-split-list" id="qmSplitList" role="listbox" aria-label="Questionnaires">
+        <!-- Populated by JS -->
+      </ul>
+
+    </aside>
+
+    <!-- ── RIGHT PANEL: detail / edit ── -->
+    <main class="qm-split__right" id="qmSplitRight" aria-live="polite">
+
+      <!-- Loading skeleton -->
+      <div class="qm-detail-loader hidden" id="qmDetailLoader" aria-label="Loading…">
+        <div class="qm-detail-loader__spinner"></div>
+        <p>Loading details…</p>
+      </div>
+
+      <!-- Detail content (hidden while loading) -->
+      <div id="qmDetailContent" class="hidden">
+
+        <!-- Detail header -->
+        <div class="qm-detail-header">
+          <div class="qm-detail-header__meta">
+            <h2 class="qm-detail-title" id="qmDetailTitle">—</h2>
+            <span class="qm-status-badge" id="qmDetailBadge"></span>
+          </div>
+          <div class="qm-detail-header__actions">
+            <button id="qmBtnSave" class="btn-primary btn-submit qm-btn-save hidden">
+              <span class="btn-submit__text">Save changes</span>
+              <span class="btn-submit__spinner" aria-hidden="true"></span>
+            </button>
+            <button id="qmBtnDelete" class="btn-ghost qm-btn-delete hidden" aria-label="Delete questionnaire">🗑</button>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="qm-tabs" role="tablist" aria-label="Detail sections">
+          <button class="qm-tab qm-tab--active" id="qmTabStats" role="tab" aria-selected="true"  aria-controls="qmPanelStats">Statistics</button>
+          <button class="qm-tab"                id="qmTabEdit"  role="tab" aria-selected="false" aria-controls="qmPanelEdit">Edit</button>
+        </div>
+
+        <!-- ── TAB 1: Statistics ── -->
+        <div class="qm-tab-panel" id="qmPanelStats" role="tabpanel" aria-labelledby="qmTabStats">
+          <div class="qm-stats-grid" id="qmStatsGrid">
+            <!-- Stat cards injected by JS -->
+          </div>
+          <div class="qm-detail-meta" id="qmDetailMeta">
+            <!-- Meta rows injected by JS -->
+          </div>
+          <div class="qm-detail-tags" id="qmDetailTagsView">
+            <!-- Tag chips injected by JS -->
+          </div>
+        </div>
+
+        <!-- ── TAB 2: Edit ── -->
+        <div class="qm-tab-panel hidden" id="qmPanelEdit" role="tabpanel" aria-labelledby="qmTabEdit">
+
+          <!-- Remaining points indicator -->
+          <div class="qn-points-widget qm-points-widget" id="qmEditPoints" aria-live="polite">
+            <span class="qn-points-widget__label">Points used</span>
+            <span class="qn-points-widget__value" id="qmPointsUsed">0</span>
+            <span class="qn-points-widget__max" id="qmPointsMax">/ 0</span>
+          </div>
+
+          <!-- Global edit error -->
+          <div id="qmEditError" class="qn-status qn-status--error hidden" role="alert" aria-live="assertive"></div>
+
+          <!-- Meta fields -->
+          <section class="qm-edit-section">
+            <h3 class="qm-edit-section__title">Details</h3>
+            <div class="qm-edit-grid">
+              <div class="form-group qm-edit-full">
+                <label class="form-label" for="qme_title">Title <span class="required-star">*</span></label>
+                <input class="form-input" type="text" id="qme_title" name="title" required />
+              </div>
+              <div class="form-group qm-edit-full">
+                <label class="form-label" for="qme_description">Description</label>
+                <textarea class="form-input form-textarea" id="qme_description" name="description" rows="2"></textarea>
+              </div>
+              <div class="form-group qm-edit-full">
+                <label class="form-label" for="qme_instructions">Instructions</label>
+                <textarea class="form-input form-textarea" id="qme_instructions" name="instructions" rows="3"></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="qme_status">Status</label>
+                <select class="form-input" id="qme_status" name="status">
+                  <option value="DRAFT">Draft</option>
+                  <option value="PUBLISHED">Published</option>
+                  <option value="ARCHIVED">Archived</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="qme_max_score">Max Score</label>
+                <input class="form-input" type="number" id="qme_max_score" name="max_score" min="1" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="qme_time_limit">Time Limit (min)</label>
+                <input class="form-input" type="number" id="qme_time_limit" name="time_limit_minutes" min="1" />
+              </div>
+              <div class="form-group qm-toggle-row">
+                <label class="form-label" for="qme_randomised">Randomise questions?</label>
+                <input class="toggle-checkbox" type="checkbox" id="qme_randomised" name="is_randomised" />
+              </div>
+            </div>
+          </section>
+
+          <!-- Tags editor -->
+          <section class="qm-edit-section">
+            <h3 class="qm-edit-section__title">Tags</h3>
+            <div id="qmEditTagList" class="qn-dynamic-list"></div>
+            <button type="button" id="qmAddTag" class="btn-outline qn-add-btn">+ Add tag</button>
+          </section>
+
+          <!-- Questions editor -->
+          <section class="qm-edit-section">
+            <h3 class="qm-edit-section__title">Questions</h3>
+            <div id="qmEditQuestionList" class="qm-question-list"></div>
+            <button type="button" id="qmAddQuestion" class="btn-outline qn-add-btn">+ Add question</button>
+          </section>
+
+        </div><!-- /#qmPanelEdit -->
+
+      </div><!-- /#qmDetailContent -->
+
+    </main>
+
+  </div><!-- /#qmSplit -->
+
+  <!-- ══ TOAST container ══ -->
+  <div id="qmToastContainer" class="qm-toast-container" aria-live="polite"></div>
+
+</div><!-- /.qm-page -->
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'assessments/js/questionnaire_manage.js' %}"></script>
+{% endblock %}
