@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
+from django.contrib.auth.models import User
 
 class QuestionnaireStatus(models.TextChoices):
     DRAFT     = "DRAFT",     "Draft"
@@ -44,6 +45,10 @@ class Questionnaire(models.Model):
         related_name="questionnaires"
     )
 
+    created_by     = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="created_questionnaires",
+        null=True, blank=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
 
@@ -127,7 +132,8 @@ class Question(models.Model):
     questionnaire     = models.ForeignKey(
         "assessments.Questionnaire",
         on_delete=models.CASCADE,
-        related_name="questions"
+        related_name="questions",
+        blank=True
     )
 
     question_type     = models.CharField(
@@ -186,7 +192,8 @@ class AnswerChoice(models.Model):
     question      = models.ForeignKey(
         "assessments.Question",
         on_delete=models.CASCADE,
-        related_name="answer_choices"
+        related_name="answer_choices",
+        blank=True
     )
 
     choice_key    = models.CharField(
@@ -200,7 +207,9 @@ class AnswerChoice(models.Model):
 
     partial_score = models.DecimalField(
         max_digits=6, decimal_places=4, default=0,
-        help_text="For Likert/partial credit. 0=wrong, 1=full credit"
+        help_text="For Likert/partial credit. 0=wrong, 1=full credit",
+        blank=True,
+        null=True
     )
 
     order         = models.PositiveSmallIntegerField(default=0)

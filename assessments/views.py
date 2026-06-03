@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET
 from django.shortcuts import get_object_or_404
 from django.http import HttpRequest,JsonResponse
+from django.db.models import Prefetch,Count,Avg,Max,Min
 
 from core.decorators import outer_exception_handler
 from .forms import (
@@ -16,6 +17,8 @@ from .forms import (
     AnswerChoiceForm
 )
 from .models import *
+
+from .services.questionnare_post import CreateQuestionniare
 
 logger = logging.getLogger(__name__)
 
@@ -38,143 +41,44 @@ class AdminQuestinnare(View):
     @method_decorator(login_required)
     @method_decorator(outer_exception_handler(logger))
     def post(self,request:HttpRequest,*args,**kwargs):
-        post = request.POST
-        errors = {"questionnaire": {}, "tags": [], "questions": [], "choices": []}
-        has_errors = False
+        questionnare_obj =  CreateQuestionniare(request)
 
-        questionnaire_form = QuestionnaireForm(post)
+        questionnaire_form = questionnare_obj.create__questionnare_form()
+        
+        tags_forms = questionnare_obj.create_tags()
 
-        if not questionnaire_form.is_valid():
-            errors["questionnaire"] = questionnaire_form.errors
-            has_errors = True
+        questions_forms = questionnare_obj.create_question_forms()
 
-        tags_data = zip(
-            post.getlist("tag"),
-            post.getlist("coupling_strength"),
-            post.getlist("is_primary"),
-        )
+        choices_forms = questionnare_obj.create_choices_forms()
 
-        tag_objects = []
-        for i, (tag_id, coupling, primary) in enumerate(tags_data):
-            form = QuestionnaireTagForm({
-                "tag":               tag_id,
-                "coupling_strength": coupling,
-                "is_primary":        primary,
-            })
-
-            if not form.is_valid():
-                errors["tags"].append({"row": i + 1, "errors": form.errors})
-                has_errors = True
-            else:
-                tag_objects.append(form)
-
-        question_texts   = post.getlist("question_text")
-        question_types   = post.getlist("question_type")
-        weights          = post.getlist("weight")
-        max_points_list  = post.getlist("max_points")
-        orders           = post.getlist("order")
-        rand_groups      = post.getlist("randomisation_group")
-        is_required_list = post.getlist("is_required")
-        explanations     = post.getlist("explanation")
-        numeric_configs  = post.getlist("numeric_config_raw")
-
-        question_forms = []
-        for i, text in enumerate(question_texts):
-            form = QuestionForm({
-                "question_text":       text,
-                "question_type":       question_types[i] if i < len(question_types) else "MCQ",
-                "weight":              weights[i]         if i < len(weights)         else "",
-                "max_points":          max_points_list[i] if i < len(max_points_list) else "",
-                "order":               orders[i]           if i < len(orders)          else i + 1,
-                "randomisation_group": rand_groups[i]      if i < len(rand_groups)     else "",
-                "is_required":         is_required_list[i] if i < len(is_required_list) else "",
-                "explanation":         explanations[i]     if i < len(explanations)    else "",
-                "numeric_config_raw":  numeric_configs[i]  if i < len(numeric_configs) else "",
-                # questionnaire FK assigned after save — skip here
-                "questionnaire":       None,
-            })
-            if not form.is_valid():
-                errors["questions"].append({"row": i + 1, "errors": form.errors})
-                has_errors = True
-            else:
-                question_forms.append(form)
-
-        choice_keys     = post.getlist("choice_key")
-        choice_texts    = post.getlist("choice_text")
-        is_correct_list = post.getlist("is_correct")
-        partial_scores  = post.getlist("partial_score")
-        choice_orders   = post.getlist("choice_order")
-        choice_exps     = post.getlist("choice_explanation")
-        choice_q_idxs   = post.getlist("choice_question_index")
-
-
-        choice_forms = []
-        for i, key in enumerate(choice_keys):
-            q_idx_str = choice_q_idxs[i] if i < len(choice_q_idxs) else None
-            try:
-                q_idx = int(q_idx_str)
-                assert 0 <= q_idx < len(question_texts)
-            except (TypeError, ValueError, AssertionError):
-                errors["choices"].append(
-                    f"Choice row {i + 1}: invalid question index '{q_idx_str}'."
-                )
-                has_errors = True
-                continue
-
-            form = AnswerChoiceForm({
-                "choice_key":    key,
-                "choice_text":   choice_texts[i]    if i < len(choice_texts)    else "",
-                "is_correct":    is_correct_list[i] if i < len(is_correct_list) else "",
-                "partial_score": partial_scores[i]  if i < len(partial_scores)  else "",
-                "order":         choice_orders[i]   if i < len(choice_orders)   else i + 1,
-                "explanation":   choice_exps[i]     if i < len(choice_exps)     else "",
-                # question FK assigned after question save — skip FK validation here
-                "question":      None,
-            })
-            if not form.is_valid():
-                # Filter out the question FK error since we pass None intentionally
-                field_errors = {
-                    k: v for k, v in form.errors.items() if k != "question"
-                }
-                if field_errors:
-                    errors["choices"].append({"row": i + 1, "errors": field_errors})
-                    has_errors = True
-            else:
-                choice_forms.append((q_idx, form))
+        has_errors = questionnare_obj.has_validation_errors()
 
         if has_errors:
-            logger.error(errors)
+            logger.error(questionnare_obj.errors)
             return JsonResponse(
-                {"success": False, "errors": errors},
+                {"success": False, "errors": questionnare_obj.errors},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        questionnaire = questionnaire_form.save()
-
-        # Save tags
-        for form in tag_objects:
-            tag = form.save(commit=False)
-            tag.questionnaire = questionnaire
-            tag.save()
-
-        # Save questions — keep a positional map for choice FK assignment
-        saved_questions = {}                      # { original_index: Question instance }
-        for original_idx, form in enumerate(question_forms):
-            question = form.save(commit=False)
-            question.questionnaire = questionnaire
-            question.save()
-            saved_questions[original_idx] = question
-
-        # Save choices — resolve FK from saved_questions map
-        for q_idx, form in choice_forms:
-            choice = form.save(commit=False)
-            choice.question = saved_questions[q_idx]
-            choice.save()
-
-        return JsonResponse(
-            {"success": True, "message": "Questionnaire created"},
-            status=status.HTTP_201_CREATED
+        is_saved = questionnare_obj.save_post(
+            questionnaire_form,
+            tags_forms,
+            questions_forms,
+            choices_forms
         )
+
+
+        if is_saved:
+            return JsonResponse(
+                {"success": True, "message": "Questionnaire created"},
+                status=status.HTTP_201_CREATED
+            )
+        else:
+            return JsonResponse(
+                {"success": False, "message": "Failed to save questionnaire"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
 
 class ListQuestionnares(View):
@@ -200,7 +104,65 @@ class ManageQuestionnares(View):
     @method_decorator(login_required)
     @method_decorator(outer_exception_handler(logger))
     def get(self,request:HttpRequest,*args,**kwargs):
-        pass
+        pk = kwargs.get("pk")
+        
+        questionnaire = (
+            Questionnaire.objects
+            .filter(id=pk)
+            .prefetch_related(
+                Prefetch(
+                    "questions",
+                    queryset=Question.objects.prefetch_related("answer_choices")
+                )
+            )
+            .annotate(
+                attempts_count=Count("attempts", distinct=True),
+                participants_count=Count("attempts__profile", distinct=True),
+                average_score=Avg("attempts__score"),
+                highest_score=Max("attempts__score"),
+                lowest_score=Min("attempts__score"),
+            )
+            .first()
+        )
+
+        data = {
+            "id": questionnaire.id,
+            "title": questionnaire.title,
+            "status": questionnaire.status,
+            "created_at": questionnaire.created_at,
+            "modified_at": questionnaire.modified_at,
+            "attempts_count": questionnaire.attempts_count,
+            "participants_count": questionnaire.participants_count,
+            "average_score": questionnaire.average_score,
+            "highest_score": questionnaire.highest_score,
+            "lowest_score": questionnaire.lowest_score,
+            "description": questionnaire.description,
+            "max_score": questionnaire.max_score,
+            "time_limit_minutes": questionnaire.time_limit_minutes,
+            "is_randomised": questionnaire.is_randomised,
+        }
+        
+        data["questions"] = [
+            {
+                "id": q.id,
+                "text": q.question_text,
+                "explanation": q.explanation,
+                "is_required": q.is_required,
+                "max_points": q.max_points,
+                "order": q.order,
+                "question_type": q.question_type,
+                "weight": q.weight,
+                "choices": list(q.answer_choices.values(
+                    "id", "choice_key", "choice_text", "is_correct", "partial_score"
+                ))
+            }
+            for q in questionnaire.questions.all()
+        ]
+
+        return JsonResponse(
+            {"success": True, "message": "Questionnaire details fetched","data": data},
+            status=status.HTTP_200_OK
+        )
 
 
     @method_decorator(login_required)
@@ -208,3 +170,24 @@ class ManageQuestionnares(View):
     def post(self,request:HttpRequest,*args,**kwargs):
         pass
 
+@require_GET
+@outer_exception_handler(logger)
+def get_questionnnaire_list(request:HttpRequest):
+    '''API endpoint to fetch list of questionnares'''
+
+    questionnares = (
+        Questionnaire.objects
+        .annotate(
+            attempts_count=Count("attempts", distinct=True),
+            participants_count=Count("attempts__profile", distinct=True),
+        )
+        .values(
+            "id", "title", "status", "created_at", "modified_at",
+            "attempts_count", "participants_count", "description","max_score"
+        )
+    )
+
+    return JsonResponse(
+        {"success": True, "results": list(questionnares)},
+        status=status.HTTP_200_OK
+    )

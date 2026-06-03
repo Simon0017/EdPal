@@ -35,6 +35,7 @@ class QuestionnaireForm(forms.ModelForm):
             "max_score",
             "time_limit_minutes",
             "is_randomised",
+            "created_by"
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 3}),

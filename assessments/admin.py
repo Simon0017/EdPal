@@ -64,6 +64,7 @@ class QuestionnaireAdmin(admin.ModelAdmin):
         "is_randomised",
         "question_count",
         "created_at",
+        "created_by",
     ]
     list_filter = ["status", "is_randomised"]
     search_fields = ["title", "slug", "description"]
@@ -76,7 +77,7 @@ class QuestionnaireAdmin(admin.ModelAdmin):
         (
             "Identity",
             {
-                "fields": ("title", "slug", "version_number", "status"),
+                "fields": ("title", "slug", "version_number", "status", "created_by"),
             },
         ),
         (

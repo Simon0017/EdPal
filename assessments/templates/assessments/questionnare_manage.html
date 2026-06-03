@@ -18,7 +18,7 @@
 
   <!-- Inject URLs + initial list data for JS -->
   <script>
-    window.QM_LIST_URL   = "{% url 'questionnare_list' %}";
+    window.QM_LIST_URL   = "{% url 'list-questionnares' %}";
     window.QM_DETAIL_URL = "{% url 'questionnare_detail' pk=0 %}".replace('/0/', '/{id}/');
     window.QM_SAVE_URL   = window.QM_DETAIL_URL; /* same endpoint, POST method */
     /* Optional: pass server-rendered list to avoid initial AJAX round-trip.

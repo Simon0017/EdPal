@@ -30,7 +30,7 @@ const csrf = () =>
 /* ─────────────────────────────────────────────────────────────
    URLS — replace {id} placeholder
 ───────────────────────────────────────────────────────────────*/
-const detailUrl = id => window.QM_DETAIL_URL.replace('{id}', id) + '?include=full';
+const detailUrl = id => window.QM_DETAIL_URL.replace('0', id) + '?include=full';
 const saveUrl   = id => window.QM_SAVE_URL.replace('{id}', id);
 
 /* ─────────────────────────────────────────────────────────────
@@ -139,11 +139,11 @@ function renderCards () {
       <p class="qm-card__desc">${q.description || 'No description.'}</p>
       <div class="qm-card__stats">
         <div class="qm-card__stat">
-          <span class="qm-card__stat-val">${q.attempt_count ?? '—'}</span>
+          <span class="qm-card__stat-val">${q.attempts_count ?? '—'}</span>
           <span>Attempts</span>
         </div>
         <div class="qm-card__stat">
-          <span class="qm-card__stat-val">${q.participant_count ?? '—'}</span>
+          <span class="qm-card__stat-val">${q.participants_count ?? '—'}</span>
           <span>Participants</span>
         </div>
         <div class="qm-card__stat">
@@ -152,8 +152,8 @@ function renderCards () {
         </div>
       </div>
       <div class="qm-card__footer">
-        <span>Modified ${fmtDate(q.date_modified)}</span>
-        <span>Created ${fmtDate(q.date_created)}</span>
+        <span>Modified ${fmtDate(q.created_at)}</span>
+        <span>Created ${fmtDate(q.modified_at)}</span>
       </div>
     </article>
   `).join('');
@@ -207,7 +207,7 @@ async function openDetail (id) {
     const res  = await fetch(detailUrl(id), { headers: { 'X-CSRFToken': csrf() } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     activeDetail = await res.json();
-    renderDetail(activeDetail);
+    renderDetail(activeDetail.data);
   } catch (err) {
     toast('Failed to load questionnaire details.', 'error');
     console.error('[QM] detail fetch error:', err);
@@ -291,11 +291,11 @@ function statCard (label, value, mod = '') {
 }
 
 function renderStats (data) {
-  const s = data.statistics || {};
+  const s = data || {};
 
   document.getElementById('qmStatsGrid').innerHTML =
-    statCard('Attempts',        s.attempt_count,               '') +
-    statCard('Participants',    s.participant_count,            '') +
+    statCard('Attempts',        s.attempts_count,               '') +
+    statCard('Participants',    s.participants_count,            '') +
     statCard('Avg score',       s.average_score != null ? s.average_score.toFixed(1) : '—', 'qm-stat-card__value--primary') +
     statCard('Highest score',   s.highest_score,                'qm-stat-card__value--success') +
     statCard('Lowest score',    s.lowest_score,                 'qm-stat-card__value--error') +
@@ -306,8 +306,8 @@ function renderStats (data) {
     ['Max score',     data.max_score],
     ['Time limit',    data.time_limit_minutes ? `${data.time_limit_minutes} min` : '—'],
     ['Randomised',    data.is_randomised ? 'Yes' : 'No'],
-    ['Created',       fmtDate(data.date_created)],
-    ['Modified',      fmtDate(data.date_modified)],
+    ['Created',       fmtDate(data.created_at)],
+    ['Modified',      fmtDate(data.modified_at)],
     ['Questions',     (data.questions || []).length],
   ].map(([k, v]) => `
     <div class="qm-meta-row">
