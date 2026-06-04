@@ -170,6 +170,69 @@ class ManageQuestionnares(View):
     def post(self,request:HttpRequest,*args,**kwargs):
         pass
 
+
+
+class AttemptQuestionnaire(View):
+    '''API endpint for crud operations to view the questionnare'''
+    template_name = "assessments/questionnare_attempt.html"
+
+    def get(self,request:HttpRequest,*args,**kwargs):
+        pk = kwargs.get("pk")
+
+        prefetch_questions = Prefetch(
+            "questions",
+            queryset=Question.objects.prefetch_related("answer_choices")
+        )
+
+        questionnaire = (
+            Questionnaire.objects
+            .filter(id=pk, status="PUBLISHED")
+            .prefetch_related(prefetch_questions)
+            .annotate(
+                attempts_count=Count("attempts", distinct=True),
+                participants_count=Count("attempts__profile", distinct=True),
+                average_score=Avg("attempts__score"),
+                highest_score=Max("attempts__score"),
+                lowest_score=Min("attempts__score"),
+            )
+            .first()
+        )
+    
+        data = {
+            "questions":[
+                {
+                    "id": q.id,
+                    "question_text": q.question_text,
+                    "explanation": q.explanation,
+                    "is_required": q.is_required,
+                    "max_points": q.max_points,
+                    "order": q.order,
+                    "question_type": q.question_type,
+                    "weight": q.weight,
+                    "choices": list(q.answer_choices.values(
+                        "id", "choice_key", "choice_text", "is_correct", "partial_score"
+                    ))
+                } for q in questionnaire.questions.all()
+            ],
+            "title": questionnaire.title,
+            "description": questionnaire.description,
+            "max_score": questionnaire.max_score,
+            "time_limit_minutes": questionnaire.time_limit_minutes,
+        } 
+
+        context = {
+            "data": data,
+            "id": pk
+        }
+        return render(request,self.template_name,context)
+    
+    def post(self,request:HttpRequest,*args,**kwargs):
+        pass
+
+
+''''
+FBVS
+'''
 @require_GET
 @outer_exception_handler(logger)
 def get_questionnnaire_list(request:HttpRequest):
