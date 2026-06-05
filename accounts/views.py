@@ -231,3 +231,18 @@ class ResetPassword(View):
             "success":True,
             "messsage":"Check your email to reset the password"
         },status=status.HTTP_202_ACCEPTED)
+    
+    
+class UserDashboard(View):
+    '''Handles rendering the user dashboard'''
+    template_name = "accounts/user_dashboard.html"
+
+    @method_decorator(login_required)
+    @method_decorator(outer_exception_handler(logger))
+    def get(self,request:HttpRequest,*args,**kwargs):
+        return render(request,self.template_name)
+    
+    @method_decorator(login_required)
+    @method_decorator(outer_exception_handler(logger))
+    def post(self,request:HttpRequest,*args,**kwargs):
+        pass

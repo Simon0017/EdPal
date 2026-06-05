@@ -1,12 +1,12 @@
 {% extends "core/user_nav.html" %}
 {% load static %}
 
-{% block title %}{{ questionnaire.title }} — EdPal{% endblock %}
+{% block title %}EdPal | {{ data.title }}{% endblock %}
 
 {% block breadcrumbs %}
 <li class="un-breadcrumbs__item"><a href="" class="un-breadcrumbs__link">Home</a></li>
-<li class="un-breadcrumbs__item"><a href="" class="un-breadcrumbs__link">Questionnaires</a></li>
-<li class="un-breadcrumbs__item"><span class="un-breadcrumbs__current">{{ questionnaire.title }}</span></li>
+<li class="un-breadcrumbs__item"><a href="#" class="un-breadcrumbs__link">Questionnaires</a></li>
+<li class="un-breadcrumbs__item"><span class="un-breadcrumbs__current">{{ data.title }}</span></li>
 {% endblock %}
 
 {% block extra_css %}

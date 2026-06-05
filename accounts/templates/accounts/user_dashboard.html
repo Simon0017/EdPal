@@ -1,0 +1,168 @@
+{% extends "core/user_nav.html" %}
+{% load static %}
+
+{% block title %}EdPal | Dashboard{% endblock %}
+
+{% block nav_dashboard %}un-nav__item--active{% endblock %}
+{% block nav_dashboard_aria %}aria-current="page"{% endblock %}
+
+{% block breadcrumbs %}
+  <span class="un-breadcrumbs__item un-breadcrumbs__item--current">Dashboard</span>
+{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'accounts/css/dashboard.css' %}" />
+{% endblock %}
+
+{% block content %}
+<!-- URL / data injection -->
+<script>
+  window.DB_STATS_URL = "{% url 'user_dashboard' %}";
+  window.MY_Q_URL    = "";
+  window.RESULTS_URL = "";
+</script>
+<form id="dbCsrfForm" class="hidden">{% csrf_token %}</form>
+
+<div class="db-page">
+
+  <!-- Welcome -->
+  <section class="db-welcome" aria-labelledby="dbWelcomeTitle">
+    <div class="db-welcome__copy">
+      <h1 class="db-welcome__title" id="dbWelcomeTitle">
+        Good to see you, <span class="db-welcome__name">{{ request.user.first_name|default:request.user.username }}</span>
+      </h1>
+      <p class="db-welcome__sub">Here is where your learning story lives.</p>
+    </div>
+    <div class="db-quote-pill" role="note" aria-label="Inspiration quote">
+      <span class="db-quote-pill__text">&ldquo;One must imagine Sisyphus happy.&rdquo;</span>
+      <span class="db-quote-pill__attr">— Albert Camus</span>
+    </div>
+  </section>
+
+  <!-- Stat cards row -->
+  <section class="db-stats" aria-label="Summary statistics">
+    <div class="db-stat-card" data-stat="latest_score">
+      <span class="db-stat-card__label">Latest Score</span>
+      <strong class="db-stat-card__value" id="dbLatestScore">—</strong>
+      <span class="db-stat-card__sub" id="dbLatestScoreSub"></span>
+    </div>
+    <div class="db-stat-card" data-stat="avg_pct">
+      <span class="db-stat-card__label">Average Score</span>
+      <strong class="db-stat-card__value" id="dbAvgPct">—</strong>
+      <span class="db-stat-card__sub">across all attempts</span>
+    </div>
+    <div class="db-stat-card" data-stat="completed">
+      <span class="db-stat-card__label">Completed</span>
+      <strong class="db-stat-card__value" id="dbCompleted">—</strong>
+      <span class="db-stat-card__sub">questionnaires</span>
+    </div>
+    <div class="db-stat-card" data-stat="in_progress">
+      <span class="db-stat-card__label">In Progress</span>
+      <strong class="db-stat-card__value" id="dbInProgress">—</strong>
+      <span class="db-stat-card__sub">active attempts</span>
+    </div>
+  </section>
+
+  <!-- Main grid -->
+  <div class="db-grid">
+
+    <!-- Score trend chart -->
+    <div class="db-card db-card--chart" aria-label="Score trend">
+      <div class="db-card__header">
+        <h2 class="db-card__title">Score Trend</h2>
+        <span class="db-card__badge" id="dbTrendBadge"></span>
+      </div>
+      <div class="db-chart-wrap">
+        <canvas id="dbScoreChart" aria-label="Line chart of scores over time" role="img"></canvas>
+      </div>
+    </div>
+
+    <!-- Category distribution -->
+    <div class="db-card db-card--donut" aria-label="Category distribution">
+      <div class="db-card__header">
+        <h2 class="db-card__title">By Category</h2>
+      </div>
+      <div class="db-chart-wrap db-chart-wrap--small">
+        <canvas id="dbCategoryChart" aria-label="Donut chart of attempts by category" role="img"></canvas>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="db-card db-card--actions" aria-label="Quick actions">
+      <div class="db-card__header">
+        <h2 class="db-card__title">Quick Actions</h2>
+      </div>
+      <div class="db-actions-grid">
+        <a href="" class="db-action-tile db-action-tile--continue">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5,3 19,12 5,21"/></svg>
+          <span>Continue Attempt</span>
+        </a>
+        <a href="{% url 'user_results' %}" class="db-action-tile db-action-tile--results">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span>View Results</span>
+        </a>
+        <a href="{% url 'user_questionnares' %}" class="db-action-tile db-action-tile--browse">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>Browse Questionnaires</span>
+        </a>
+        <a href="" class="db-action-tile db-action-tile--profile">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Edit Profile</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Career recommendations -->
+    <div class="db-card db-card--careers" aria-label="Career recommendations" aria-live="polite">
+      <div class="db-card__header">
+        <h2 class="db-card__title">Recommended Careers</h2>
+        <span class="db-card__badge db-card__badge--accent">Based on your profile</span>
+      </div>
+      <ul class="db-career-list" id="dbCareerList">
+        <li class="db-career-skeleton" aria-hidden="true"></li>
+        <li class="db-career-skeleton" aria-hidden="true"></li>
+        <li class="db-career-skeleton" aria-hidden="true"></li>
+      </ul>
+    </div>
+
+    <!-- Trending tags -->
+    <div class="db-card db-card--trending" aria-label="Trending topics">
+      <div class="db-card__header">
+        <h2 class="db-card__title">Trending Topics</h2>
+      </div>
+      <ul class="db-tag-list" id="dbTagList">
+        <li class="db-career-skeleton" aria-hidden="true"></li>
+        <li class="db-career-skeleton" aria-hidden="true"></li>
+      </ul>
+    </div>
+
+    <!-- Latest questionnaires -->
+    <div class="db-card db-card--latest" aria-label="Latest questionnaires">
+      <div class="db-card__header">
+        <h2 class="db-card__title">Latest Questionnaires</h2>
+        <a href="" class="db-card__link">View all</a>
+      </div>
+      <ul class="db-q-list" id="dbLatestQ">
+        <li class="db-career-skeleton" aria-hidden="true"></li>
+        <li class="db-career-skeleton" aria-hidden="true"></li>
+        <li class="db-career-skeleton" aria-hidden="true"></li>
+      </ul>
+    </div>
+
+    <!-- 3D decorative scene -->
+    <div class="db-card db-card--3d" aria-hidden="true">
+      <canvas id="db3dCanvas"></canvas>
+      <div class="db-3d__overlay">
+        <span class="db-3d__label">Analytics</span>
+      </div>
+    </div>
+
+  </div><!-- /db-grid -->
+</div><!-- /db-page -->
+{% endblock %}
+
+{% block extra_js %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="{% static 'accounts/js/dashboard.js' %}"></script>
+{% endblock %}

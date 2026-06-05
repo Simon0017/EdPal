@@ -66,6 +66,9 @@ class Questionnaire(models.Model):
             models.Index(fields=["slug", "version_number"]),
         ]
 
+    def __str__(self):
+        return f"{self.title}:{self.status}"
+
 
     def save(self,  *args, **kwargs):
         if self.pk:
@@ -111,6 +114,9 @@ class QuestionnaireTag(models.Model):
         indexes = [
             models.Index(fields=["tag", "coupling_strength"]),
         ]
+
+    def __str__(self):
+        return f"{self.tag.title}:{self.questionnaire.title}"
 
 class QuestionType(models.TextChoices):
     MCQ          = "MCQ",       "Multiple Choice (single answer)"
@@ -182,6 +188,9 @@ class Question(models.Model):
             models.Index(fields=["question_type"]),
         ]
 
+    def __str__(self):
+        return f"{self.question_text}"
+
 
 class AnswerChoice(models.Model):
     """
@@ -226,7 +235,8 @@ class AnswerChoice(models.Model):
         ]
         ordering = ["question", "order"]
 
-
+    def __str__(self):
+        return f"{self.choice_text}"
 
 
 class AttemptStatus(models.TextChoices):
@@ -268,13 +278,14 @@ class QuestionnaireAttempt(models.Model):
     )
 
     attempt_number = models.PositiveIntegerField(
-        help_text="1-based attempt index for this profile+questionnaire"
+        help_text="1-based attempt index for this profile+questionnaire",
+        null=True,blank=True
     )
 
     started_at     = models.DateTimeField(auto_now_add=True)
-    completed_at   = models.DateTimeField(null=True, blank=True)
+    completed_at   = models.DateTimeField(null=True, blank=True,auto_now_add=True)
     ip_address     = models.GenericIPAddressField(null=True, blank=True)
-    user_agent     = models.TextField(blank=True)
+    user_agent     = models.TextField(blank=True,null=True)
 
     class Meta:
         db_table = "responses_attempt"
@@ -290,6 +301,8 @@ class QuestionnaireAttempt(models.Model):
             models.Index(fields=["completed_at"]),
         ]
 
+    def __str__(self):
+        return f"{self.questionnaire.title}, Attempt {self.attempt_number or 0}"
 
 class QuestionResponse(models.Model):
     """
@@ -313,7 +326,8 @@ class QuestionResponse(models.Model):
     attempt        = models.ForeignKey(
         "assessments.QuestionnaireAttempt",
         on_delete=models.CASCADE,
-        related_name="question_responses"
+        related_name="question_responses",
+        null=True, blank=True
     )
     question       = models.ForeignKey(
         "assessments.Question",
@@ -351,6 +365,8 @@ class QuestionResponse(models.Model):
             models.Index(fields=["question", "is_correct"]),
         ]
 
+    def __str__(self):
+        return f"{self.question.question_text}: {self.is_correct}"
 
 class AttemptScore(models.Model):
     """
@@ -386,3 +402,6 @@ class AttemptScore(models.Model):
             models.Index(fields=["percentage"]),
             models.Index(fields=["percentile_rank"]),
         ]
+
+    def __str__(self):
+        return f"{self.attempt}: {self.percentage}%"

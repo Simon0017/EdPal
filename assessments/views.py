@@ -8,6 +8,7 @@ from django.views.decorators.http import require_GET
 from django.shortcuts import get_object_or_404
 from django.http import HttpRequest,JsonResponse
 from django.db.models import Prefetch,Count,Avg,Max,Min
+import json
 
 from core.decorators import outer_exception_handler
 from .forms import (
@@ -19,6 +20,7 @@ from .forms import (
 from .models import *
 
 from .services.questionnare_post import CreateQuestionniare
+from .services.attempt_evaluation import AttemptEvaluationService
 
 logger = logging.getLogger(__name__)
 
@@ -176,6 +178,8 @@ class AttemptQuestionnaire(View):
     '''API endpint for crud operations to view the questionnare'''
     template_name = "assessments/questionnare_attempt.html"
 
+    @method_decorator(login_required)
+    @method_decorator(outer_exception_handler(logger))
     def get(self,request:HttpRequest,*args,**kwargs):
         pk = kwargs.get("pk")
 
@@ -226,10 +230,61 @@ class AttemptQuestionnaire(View):
         }
         return render(request,self.template_name,context)
     
+
+    @method_decorator(login_required)
+    @method_decorator(outer_exception_handler(logger))
+    def post(self,request:HttpRequest,*args,**kwargs):
+        attempt_obj =  AttemptEvaluationService(request)
+        attempt_obj.setup()
+        attempt_obj.handle_answers()
+
+        data = attempt_obj.response_data
+
+        return JsonResponse(
+            {
+                "success":True,
+                "percentage":78,
+                "passed":True,
+                "score":5,
+                "max_score":10,
+                "feedback":["You did well","Focus on your timing"],
+                "details":"Will let you know",
+                "email_sent":True,
+                "attempt_id":1
+
+            },status=status.HTTP_200_OK
+        )
+
+
+class UserQuestionnaires(View):
+    '''Handles rendering the user dashboard'''
+    template_name = "assessments/user_questionnaires.html"
+
+    @method_decorator(login_required)
+    @method_decorator(outer_exception_handler(logger))
+    def get(self,request:HttpRequest,*args,**kwargs):
+        return render(request,self.template_name)
+    
+    @method_decorator(login_required)
+    @method_decorator(outer_exception_handler(logger))
     def post(self,request:HttpRequest,*args,**kwargs):
         pass
 
 
+
+class UserResults(View):
+    '''Handles rendering the user dashboard'''
+    template_name = "assessments/results.html"
+
+    @method_decorator(login_required)
+    @method_decorator(outer_exception_handler(logger))
+    def get(self,request:HttpRequest,*args,**kwargs):
+        return render(request,self.template_name)
+    
+    @method_decorator(login_required)
+    @method_decorator(outer_exception_handler(logger))
+    def post(self,request:HttpRequest,*args,**kwargs):
+        pass
 ''''
 FBVS
 '''

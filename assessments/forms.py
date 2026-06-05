@@ -338,7 +338,7 @@ class AttemptStatusUpdateForm(forms.ModelForm):
 
     class Meta:
         model = QuestionnaireAttempt
-        fields = ["status", "completed_at"]
+        fields = ["status"]
 
     def clean(self):
         cleaned = super().clean()
@@ -357,8 +357,6 @@ class AttemptStatusUpdateForm(forms.ModelForm):
                     }
                 )
 
-        if new_status == AttemptStatus.COMPLETED and not cleaned.get("completed_at"):
-            self.add_error("completed_at", "completed_at is required when marking as Completed.")
 
         return cleaned
 

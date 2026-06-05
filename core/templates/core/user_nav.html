@@ -52,7 +52,7 @@
         <ul class="un-nav__list" role="list">
 
           <li>
-            <a href="" class="un-nav__item {% block nav_dashboard %}{% endblock %}" {% block nav_dashboard_aria %}{% endblock %}>
+            <a href="{% url 'user_dashboard' %}" class="un-nav__item {% block nav_dashboard %}{% endblock %}" {% block nav_dashboard_aria %}{% endblock %}>
               <!-- Dashboard icon -->
               <svg class="un-nav__icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M2 10.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-7ZM9 3.5a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v14a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-14ZM2 3.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-4Z"/>
@@ -62,7 +62,7 @@
           </li>
 
           <li>
-            <a href="" class="un-nav__item {% block nav_my_q %}{% endblock %}" {% block nav_my_q_aria %}{% endblock %}>
+            <a href="{% url 'user_questionnares' %}" class="un-nav__item {% block nav_my_q %}{% endblock %}" {% block nav_my_q_aria %}{% endblock %}>
               <!-- Clipboard icon -->
               <svg class="un-nav__icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fill-rule="evenodd" d="M4 4a2 2 0 0 1 2-2h4.586A2 2 0 0 1 12 2.586L15.414 6A2 2 0 0 1 16 7.414V16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4Zm2 6a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H7a1 1 0 0 1-1-1Zm1 3a1 1 0 1 0 0 2h4a1 1 0 1 0 0-2H7Z" clip-rule="evenodd"/>
@@ -90,7 +90,7 @@
           </li>
 
           <li>
-            <a href="" class="un-nav__item {% block nav_results %}{% endblock %}" {% block nav_results_aria %}{% endblock %}>
+            <a href="{% url 'user_results' %}" class="un-nav__item {% block nav_results %}{% endblock %}" {% block nav_results_aria %}{% endblock %}>
               <!-- Chart / results icon -->
               <svg class="un-nav__icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M15.5 2A1.5 1.5 0 0 0 14 3.5v13a1.5 1.5 0 0 0 3 0v-13A1.5 1.5 0 0 0 15.5 2ZM9.5 6A1.5 1.5 0 0 0 8 7.5v9a1.5 1.5 0 0 0 3 0v-9A1.5 1.5 0 0 0 9.5 6ZM3.5 10A1.5 1.5 0 0 0 2 11.5v5a1.5 1.5 0 0 0 3 0v-5A1.5 1.5 0 0 0 3.5 10Z"/>

@@ -1,0 +1,435 @@
+/* results.css — rs-* prefix */
+
+.rs-page { max-width: 860px; margin: 0 auto; }
+
+/* ── Page header ── */
+.rs-page-header { margin-bottom: 22px; }
+
+.rs-page-title {
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.3rem, 3vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 4px;
+}
+
+.rs-page-sub {
+  font-size: 0.85rem;
+  opacity: 0.45;
+  margin: 0;
+}
+
+/* ── Summary strip ── */
+.rs-strip {
+  display: flex;
+  align-items: center;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 18px 28px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+
+.rs-strip__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 80px;
+}
+
+.rs-strip__value {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-primary);
+}
+
+.rs-strip__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  opacity: 0.45;
+}
+
+.rs-strip__sep {
+  width: 1px;
+  height: 36px;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+/* ── Result rows ── */
+.rs-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.15s;
+}
+
+.rs-row:hover { border-color: var(--color-primary); }
+.rs-row:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+.rs-row__title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rs-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  opacity: 0.5;
+}
+
+.rs-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.rs-badge--pass   { background: rgba(163,230,53,0.15); color: #a3e635; }
+.rs-badge--fail   { background: rgba(248,113,113,0.15); color: #f87171; }
+
+.rs-row__score {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.rs-row__arrow {
+  opacity: 0.3;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.rs-row:hover .rs-row__arrow {
+  opacity: 0.8;
+  transform: translateX(2px);
+}
+
+/* ── Skeletons ── */
+.rs-skeleton-list { display: flex; flex-direction: column; gap: 8px; }
+
+.rs-skeleton-row {
+  height: 72px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-foreground) 5%, transparent);
+  animation: rs-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes rs-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+
+/* ── Empty state ── */
+.rs-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px 20px;
+  opacity: 0.4;
+  font-size: 0.88rem;
+}
+
+/* ── Modal backdrop ── */
+.rs-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+/* ── Modal ── */
+.rs-modal {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 28px 28px 24px;
+  position: relative;
+  animation: rs-modal-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes rs-modal-in {
+  from { opacity: 0; transform: scale(0.94) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.rs-modal__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--color-foreground);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+.rs-modal__close:hover { opacity: 1; }
+.rs-modal__close:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+/* ── Score ring ── */
+.rs-modal__score-ring {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  margin: 0 auto 18px;
+}
+
+.rs-ring-svg {
+  width: 110px;
+  height: 110px;
+  transform: rotate(-90deg);
+}
+
+.rs-ring-bg {
+  fill: none;
+  stroke: var(--color-border);
+  stroke-width: 8;
+}
+
+.rs-ring-fill {
+  fill: none;
+  stroke: url(#rsRingGrad);
+  stroke: var(--color-primary);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 326.73;
+  stroke-dashoffset: 326.73;
+  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rs-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.rs-ring-pct {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-primary);
+}
+
+.rs-ring-label {
+  font-size: 0.65rem;
+  opacity: 0.45;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Modal internals ── */
+.rs-modal__title {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 0 0 10px;
+}
+
+.rs-modal__badges {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.rs-modal__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.rs-modal__cell {
+  background: color-mix(in srgb, var(--color-foreground) 5%, transparent);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rs-modal__cell-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  opacity: 0.45;
+}
+
+.rs-modal__cell-value {
+  font-family: var(--font-mono), monospace;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+/* ── Modal sections ── */
+.rs-modal__section { margin-bottom: 18px; }
+
+.rs-modal__section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  opacity: 0.5;
+  margin: 0 0 10px;
+}
+
+.rs-modal__breakdown { display: flex; flex-direction: column; gap: 8px; }
+
+.rs-breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rs-breakdown-item__label {
+  font-size: 0.8rem;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rs-breakdown-item__bar {
+  width: 100px;
+  height: 5px;
+  background: var(--color-border);
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.rs-breakdown-item__fill {
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: 4px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rs-breakdown-item__val {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  width: 36px;
+  text-align: right;
+  opacity: 0.6;
+}
+
+/* ── Career highlights in modal ── */
+.rs-modal__careers { display: flex; flex-direction: column; gap: 8px; }
+
+.rs-modal-career {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  font-size: 0.8rem;
+}
+
+.rs-modal-career__title { font-weight: 600; }
+.rs-modal-career__weight {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  color: var(--color-primary);
+}
+
+/* ── Email row ── */
+.rs-modal__email-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+
+.rs-modal__email-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+  font-size: 0.83rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* ── Modal actions ── */
+.rs-modal__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rs-modal-btn {
+  flex: 1;
+  min-width: 120px;
+  text-align: center;
+  font-size: 0.82rem;
+  padding: 10px 14px;
+  text-decoration: none;
+}
+
+/* ── Light theme ── */
+html:not(.theme-dark) .rs-strip,
+html:not(.theme-dark) .rs-row,
+html:not(.theme-dark) .rs-modal { background: #FFFDF7; border-color: #e5e0d8; }
+
+html:not(.theme-dark) .rs-modal__cell { background: #f0ebe3; }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .rs-row { grid-template-columns: 1fr auto; }
+  .rs-row__arrow { display: none; }
+  .rs-modal { padding: 20px 16px; border-radius: 16px; }
+  .rs-modal__actions { flex-direction: column; }
+  .rs-modal-btn { min-width: unset; }
+}

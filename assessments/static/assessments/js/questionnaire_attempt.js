@@ -684,7 +684,7 @@ async function handleSubmit (e, forced = false) {
   const btn = document.getElementById('qaBtnSubmit');
   btn.classList.add('loading');
   btn.disabled = true;
-
+  
   try {
     const res = await fetch(window.ATTEMPT_URL, {
       method:  'POST',

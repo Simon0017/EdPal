@@ -1,0 +1,148 @@
+{% extends "core/user_nav.html" %}
+{% load static %}
+
+{% block title %}EdPal | Results{% endblock %}
+
+{% block nav_results %}un-nav__item--active{% endblock %}
+{% block nav_results_aria %}aria-current="page"{% endblock %}
+
+{% block breadcrumbs %}
+  <a href="{% url 'user_dashboard' %}" class="un-breadcrumbs__item">Dashboard</a>
+  <span class="un-breadcrumbs__sep">/</span>
+  <span class="un-breadcrumbs__item un-breadcrumbs__item--current">Results</span>
+{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'assessments/css/results.css' %}" />
+{% endblock %}
+
+{% block content %}
+<script>
+  window.RS_LIST_URL    = "{% url 'user_results' %}";
+  window.RS_ATTEMPT_URL = "";
+  window.RS_RESULTS_URL = "{% url 'user_results' %}";
+</script>
+<form id="rsCsrfForm" class="hidden">{% csrf_token %}</form>
+
+<div class="rs-page">
+
+  <!-- Page header -->
+  <div class="rs-page-header">
+    <h1 class="rs-page-title">Results History</h1>
+    <p class="rs-page-sub">All your completed attempts in one place.</p>
+  </div>
+
+  <!-- Summary strip -->
+  <section class="rs-strip" aria-label="Overall statistics">
+    <div class="rs-strip__stat">
+      <span class="rs-strip__value" id="rsCompleted">—</span>
+      <span class="rs-strip__label">Completed</span>
+    </div>
+    <div class="rs-strip__sep" role="separator"></div>
+    <div class="rs-strip__stat">
+      <span class="rs-strip__value" id="rsAvgPct">—</span>
+      <span class="rs-strip__label">Average</span>
+    </div>
+    <div class="rs-strip__sep" role="separator"></div>
+    <div class="rs-strip__stat">
+      <span class="rs-strip__value" id="rsBest">—</span>
+      <span class="rs-strip__label">Best Score</span>
+    </div>
+    <div class="rs-strip__sep" role="separator"></div>
+    <div class="rs-strip__stat">
+      <span class="rs-strip__value" id="rsPassed">—</span>
+      <span class="rs-strip__label">Passed</span>
+    </div>
+  </section>
+
+  <!-- Results list -->
+  <div class="rs-list" id="rsList" aria-live="polite" aria-label="Results list">
+    <div class="rs-skeleton-list" id="rsSkeleton" aria-hidden="true">
+      <div class="rs-skeleton-row"></div>
+      <div class="rs-skeleton-row"></div>
+      <div class="rs-skeleton-row"></div>
+    </div>
+  </div>
+
+  <div class="rs-empty hidden" id="rsEmpty" role="status">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <p>No completed attempts yet.</p>
+  </div>
+
+</div><!-- /rs-page -->
+
+<!-- Result detail modal -->
+<div class="rs-modal-backdrop hidden" id="rsModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="rsModalTitle">
+  <div class="rs-modal" id="rsModal">
+    <button class="rs-modal__close" id="rsModalClose" aria-label="Close result detail" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+
+    <div class="rs-modal__score-ring" aria-hidden="true">
+      <svg viewBox="0 0 120 120" class="rs-ring-svg">
+        <circle class="rs-ring-bg"    cx="60" cy="60" r="52" />
+        <circle class="rs-ring-fill"  cx="60" cy="60" r="52" id="rsRingFill" />
+      </svg>
+      <div class="rs-ring-center">
+        <span class="rs-ring-pct" id="rsModalPct">—</span>
+        <span class="rs-ring-label">score</span>
+      </div>
+    </div>
+
+    <h2 class="rs-modal__title" id="rsModalTitle"></h2>
+
+    <div class="rs-modal__badges" id="rsModalBadges"></div>
+
+    <div class="rs-modal__grid">
+      <div class="rs-modal__cell">
+        <span class="rs-modal__cell-label">Raw Score</span>
+        <span class="rs-modal__cell-value" id="rsModalRaw">—</span>
+      </div>
+      <div class="rs-modal__cell">
+        <span class="rs-modal__cell-label">Max Score</span>
+        <span class="rs-modal__cell-value" id="rsModalMax">—</span>
+      </div>
+      <div class="rs-modal__cell">
+        <span class="rs-modal__cell-label">Time Taken</span>
+        <span class="rs-modal__cell-value" id="rsModalTime">—</span>
+      </div>
+      <div class="rs-modal__cell">
+        <span class="rs-modal__cell-label">Percentile</span>
+        <span class="rs-modal__cell-value" id="rsModalPercentile">—</span>
+      </div>
+    </div>
+
+    <!-- Subscore breakdown -->
+    <div class="rs-modal__section" id="rsSubscoreSection">
+      <h3 class="rs-modal__section-title">Breakdown</h3>
+      <div class="rs-modal__breakdown" id="rsBreakdown"></div>
+    </div>
+
+    <!-- Career highlights -->
+    <div class="rs-modal__section" id="rsCareerSection">
+      <h3 class="rs-modal__section-title">Career Highlights</h3>
+      <div class="rs-modal__careers" id="rsModalCareers"></div>
+    </div>
+
+    <!-- Email toggle -->
+    <div class="rs-modal__email-row">
+      <label class="rs-modal__email-label" for="rsEmailToggle">
+        <span>Send results to my email</span>
+        <input type="checkbox" class="toggle-checkbox" id="rsEmailToggle" aria-label="Send results to email" />
+      </label>
+      <span class="rs-email-status sr-only" id="rsEmailStatus" aria-live="polite"></span>
+    </div>
+
+    <!-- Actions -->
+    <div class="rs-modal__actions">
+      <a href="#" class="btn-primary rs-modal-btn" id="rsReviewBtn">Review Answers</a>
+      <button class="btn-ghost rs-modal-btn" id="rsDownloadBtn" type="button">Download Report</button>
+      <a href="{% url 'user_dashboard' %}" class="btn-outline rs-modal-btn">Back to Dashboard</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'assessments/js/results.js' %}"></script>
+{% endblock %}

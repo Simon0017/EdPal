@@ -256,27 +256,27 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['console','file'],
-            'level': 'WARNING',
+            'level': 'INFO',
             'propagate': True,
         },
         'core': {  
             'handlers': ['console','file'],
-            'level': 'WARNING',
+            'level': 'INFO',
             'propagate': False,
         },
         'accounts': {  
             'handlers': ['console','file'],
-            'level': 'WARNING',
+            'level': 'INFO',
             'propagate': False,
         },
         'assessments': {  
             'handlers': ['console','file'],
-            'level': 'WARNING',
+            'level': 'INFO',
             'propagate': False,
         },
         'careers': {  
             'handlers': ['console','file'],
-            'level': 'WARNING',
+            'level': 'INFO',
             'propagate': False,
         },
     },

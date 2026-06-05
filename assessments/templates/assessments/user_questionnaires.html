@@ -1,0 +1,98 @@
+{% extends "core/user_nav.html" %}
+{% load static %}
+
+{% block title %}EdPal | My Questionnaires{% endblock %}
+
+{% block nav_my_q %}un-nav__item--active{% endblock %}
+{% block nav_my_q_aria %}aria-current="page"{% endblock %}
+
+{% block breadcrumbs %}
+  <a href="{% url 'user_dashboard' %}" class="un-breadcrumbs__item">Dashboard</a>
+  <span class="un-breadcrumbs__sep">/</span>
+  <span class="un-breadcrumbs__item un-breadcrumbs__item--current">My Questionnaires</span>
+{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'assessments/css/user_questionnaires.css' %}" />
+{% endblock %}
+
+{% block content %}
+<script>
+  window.QS_LIST_URL   = "";
+  window.QS_ATTEMPT_URL = "";
+  window.QS_RESULTS_URL = "";
+</script>
+<form id="qsCsrfForm" class="hidden">{% csrf_token %}</form>
+
+<div class="qs-page">
+
+  <!-- Summary header -->
+  <section class="qs-summary" aria-label="Questionnaire statistics">
+    <div class="qs-summary__stat">
+      <span class="qs-summary__value" id="qsTotalAttempts">—</span>
+      <span class="qs-summary__label">Total Attempts</span>
+    </div>
+    <div class="qs-summary__divider" role="separator"></div>
+    <div class="qs-summary__stat">
+      <span class="qs-summary__value" id="qsBestScore">—</span>
+      <span class="qs-summary__label">Best Score</span>
+    </div>
+    <div class="qs-summary__divider" role="separator"></div>
+    <div class="qs-summary__stat">
+      <span class="qs-summary__value" id="qsActiveTopics">—</span>
+      <span class="qs-summary__label">Active Topics</span>
+    </div>
+  </section>
+
+  <!-- Controls -->
+  <div class="qs-controls">
+    <div class="qs-filters" role="group" aria-label="Filter by status">
+      <button class="qs-filter-btn qs-filter-btn--active" data-filter="all" type="button">All</button>
+      <button class="qs-filter-btn" data-filter="completed" type="button">Completed</button>
+      <button class="qs-filter-btn" data-filter="in_progress" type="button">In Progress</button>
+      <button class="qs-filter-btn" data-filter="published" type="button">New</button>
+    </div>
+    <div class="qs-controls__right">
+      <div class="qs-search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="qs-search-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="form-input qs-search" type="search" id="qsSearch" placeholder="Search questionnaires…" aria-label="Search questionnaires" />
+      </div>
+      <div class="qs-view-toggle" role="group" aria-label="View mode">
+        <button class="qs-view-btn qs-view-btn--active" id="qsListBtn" data-view="list" aria-label="List view" aria-pressed="true" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </button>
+        <button class="qs-view-btn" id="qsGridBtn" data-view="grid" aria-label="Grid view" aria-pressed="false" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- List / grid -->
+  <div class="qs-container qs-container--list" id="qsContainer" aria-live="polite" aria-label="Questionnaire list">
+    <!-- items injected by JS -->
+    <div class="qs-skeleton-list" id="qsSkeleton" aria-hidden="true">
+      <div class="qs-skeleton-row"></div>
+      <div class="qs-skeleton-row"></div>
+      <div class="qs-skeleton-row"></div>
+      <div class="qs-skeleton-row"></div>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div class="qs-empty hidden" id="qsEmpty" role="status">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+    <p>No questionnaires match your filter.</p>
+  </div>
+
+  <!-- Load more -->
+  <div class="qs-load-more-wrap hidden" id="qsLoadMoreWrap">
+    <button class="btn-outline qs-load-more" id="qsLoadMore" type="button">Load more</button>
+  </div>
+
+</div><!-- /qs-page -->
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'assessments/js/user_questionnaires.js' %}"></script>
+{% endblock %}

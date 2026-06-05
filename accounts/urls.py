@@ -7,4 +7,5 @@ urlpatterns = [
     path("forgot-password", ForgotPassword.as_view(), name="forgot_password"),
     path("reset-password/<int:uid>/<str:token>/", ResetPassword.as_view(), name="reset_password"),
     path("search-subject",search_subjects_re,name="search_subjects"),
+    path("user-dashboard",UserDashboard.as_view(),name="user_dashboard"),
 ]
