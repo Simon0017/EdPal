@@ -56,3 +56,15 @@ class TagsView(View):
             "name":tag_qs["title"]
         },status=status.HTTP_201_CREATED)
 
+
+class HomePageView(View):
+    '''Handles rendering the user dashboard'''
+    template_name = "core/homepage.html"
+
+    @method_decorator(outer_exception_handler(logger))
+    def get(self,request:HttpRequest,*args,**kwargs):
+        return render(request,self.template_name)
+    
+    @method_decorator(outer_exception_handler(logger))
+    def post(self,request:HttpRequest,*args,**kwargs):
+        pass

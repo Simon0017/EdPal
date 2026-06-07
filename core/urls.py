@@ -3,4 +3,5 @@ from .views import *
 
 urlpatterns = [
     path("tags",TagsView.as_view(),name="tags"),
+    path("",HomePageView.as_view(),name="homepage")
 ]
