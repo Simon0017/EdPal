@@ -152,7 +152,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # login url
 LOGIN_URL = '/accounts/user-login'
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/accounts/user-dashboard'
 LOGOUT_REDIRECT_URL = '/'
 
 

@@ -12,11 +12,8 @@ function escHtml(str) {
 /* ── Fetch all results ── */
 async function loadResults() {
   try {
-    const res = await fetch(`${window.RS_LIST_URL}?format=json`, {
-      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-    });
-    if (!res.ok) throw new Error('fetch failed');
-    const data = await res.json();
+    
+    const data = window.DATA;
 
     fillStrip(data);
     renderRows(data.results || data.attempts || []);

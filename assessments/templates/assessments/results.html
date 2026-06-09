@@ -17,11 +17,7 @@
 {% endblock %}
 
 {% block content %}
-<script>
-  window.RS_LIST_URL    = "{% url 'user_results' %}";
-  window.RS_ATTEMPT_URL = "";
-  window.RS_RESULTS_URL = "{% url 'user_results' %}";
-</script>
+{{data|json_script:"attempt-data"}}
 <form id="rsCsrfForm" class="hidden">{% csrf_token %}</form>
 
 <div class="rs-page">
@@ -141,6 +137,15 @@
     </div>
   </div>
 </div>
+
+<script>
+  window.DATA = JSON.parse(
+    document.getElementById("attempt-data").textContent
+  );
+  window.RS_LIST_URL= "{% url 'user_results' %}"
+  window.RS_ATTEMPT_URL = "";
+  window.RS_RESULTS_URL = "{% url 'user_results' %}";
+</script>
 {% endblock %}
 
 {% block extra_js %}

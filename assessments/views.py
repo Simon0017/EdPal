@@ -234,23 +234,13 @@ class AttemptQuestionnaire(View):
     @method_decorator(login_required)
     @method_decorator(outer_exception_handler(logger))
     def post(self,request:HttpRequest,*args,**kwargs):
-        attempt_obj =  AttemptEvaluationService(request)
-        attempt_obj.setup()
-        attempt_obj.handle_answers()
-
-        data = attempt_obj.response_data
+        attempt =  AttemptEvaluationService(request)
+        response = attempt.build_response
 
         return JsonResponse(
             {
                 "success":True,
-                "percentage":78,
-                "passed":True,
-                "score":5,
-                "max_score":10,
-                "feedback":["You did well","Focus on your timing"],
-                "details":"Will let you know",
-                "email_sent":True,
-                "attempt_id":1
+                **response
 
             },status=status.HTTP_200_OK
         )
@@ -279,6 +269,11 @@ class UserResults(View):
     @method_decorator(login_required)
     @method_decorator(outer_exception_handler(logger))
     def get(self,request:HttpRequest,*args,**kwargs):
+        attempts = (
+            QuestionnaireAttempt.objects
+            .prefetch_related("question_responses")
+            .filter(profile=request.user.profile)
+        )
         return render(request,self.template_name)
     
     @method_decorator(login_required)

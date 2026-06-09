@@ -5,6 +5,7 @@ from django.db.models import Prefetch,Max
 import logging
 from typing import Any
 import math
+from .feedback_classifier import Feedback
 
 logger = logging.getLogger(__name__)
 
@@ -15,22 +16,12 @@ from ..forms import QuestionResponseForm
 class AttemptEvaluationService:
     def __init__(self,request:HttpRequest):
         self.request = request
-        self.response_data: dict = {
-            "success": False,
-            "percentage": 0,
-            "passed": False,
-            "score": 0,
-            "max_score": 0,
-            "feedback": [],
-            "details": "",
-            "email_sent": False,
-            "attempt_id": None
-        }
         self.body_data:dict[str,Any] = json.loads(request.body.decode())
         self.questinnare_id:int = self.body_data.get('questionnaire_id')
         self.answers:list[dict] = self.body_data.get('answers')
         self.send_email:bool = self.body_data.get('send_email')
         self.questionnaire = None
+        self.attempt_id = None
 
     def setup(self):
         prefetch_questions = Prefetch(
@@ -48,7 +39,7 @@ class AttemptEvaluationService:
     def save_response(self):
         pass
 
-    def handle_answers(self):
+    def handle_answers(self) -> float:
         try:
             # create an attempt
             # select the latest attempt and increase it
@@ -59,6 +50,7 @@ class AttemptEvaluationService:
             
             latest_attempt_number = latest_attempt_number or 0
             new_attempt_number = latest_attempt_number + 1
+            self.attempt_id = new_attempt_number
             
             attempt_instance = QuestionnaireAttempt(
                 profile=self.request.user.profile, # include a fail safe for unauthenticated
@@ -68,6 +60,8 @@ class AttemptEvaluationService:
             )
 
             attempt_instance.save()
+
+            points_awarded:float = 0.0
 
             for answer in self.answers:  #OPTIMIZE THIS SO THAT TIME COMPLEXITY IS NOT AN ISSUE
                 question_id:int = answer.get("question_id")
@@ -93,30 +87,34 @@ class AttemptEvaluationService:
                 
                 response:QuestionResponse = question_response_form.save(commit=False)
                 
-                self.evaluate_question_answer(question,answer_value,response)
+                answer_points:float = self.evaluate_question_answer(question,answer_value,response)
+                points_awarded += float(answer_points)
+
+            return points_awarded
             
         except Exception as e:
             logger.error(str(e))
+            return 0.0
 
 
-    def evaluate_question_answer(self,question:Question,answer_value:Any,response:QuestionResponse):
+    def evaluate_question_answer(self,question:Question,answer_value:Any,response:QuestionResponse) -> float:
         match question.question_type:
             case "MCQ":
-                self.handle_mcq(question,answer_value,response)
+                return self.handle_mcq(question,answer_value,response)
             case "MULTI":
-                self.handle_multi(question,answer_value,response)
+                return self.handle_multi(question,answer_value,response)
             case "TEXT":
-                self.handle_text(question,answer_value,response)
+                return self.handle_text(question,answer_value,response)
             case "NUMERIC":
-                self.handle_numeric(question,answer_value,response)
+                return self.handle_numeric(question,answer_value,response)
             case "LIKERT":
-                self.handle_likert(question,answer_value,response)
+                return self.handle_likert(question,answer_value,response)
             case "RANKING":
-                self.handle_ranking(question,answer_value,response)
+                return self.handle_ranking(question,answer_value,response)
             case _:
-                return None
+                return 0.0
     
-    def handle_mcq(self,question:Question,answer_value:Any,response:QuestionResponse):
+    def handle_mcq(self,question:Question,answer_value:Any,response:QuestionResponse) -> float:
         '''Multiple Choice (single answer)'''
         try:
             choices = question.answer_choices.all()
@@ -128,21 +126,24 @@ class AttemptEvaluationService:
                 return
             
             max_points = question.max_points
+            points_awarded = 0.0
 
             if str(answer_value).lower() == str(correct.choice_key).lower():
                 response.is_correct = True
-                response.points_awarded = max_points
-                self.response_data["percentage"] += max_points
+                points_awarded = max_points
+                response.points_awarded = points_awarded
             else:
                 response.is_correct = False
-                self.response_data["percentage"] += 0
 
             response.save()
 
+            return points_awarded
+
         except Exception as e:
             logger.error(str(e))
+            return 0.0
 
-    def handle_multi(self,question:Question,answer_value:list,response:QuestionResponse):
+    def handle_multi(self,question:Question,answer_value:list,response:QuestionResponse) -> float:
         try:
             if not isinstance(answer_value,list):
                 return
@@ -165,18 +166,54 @@ class AttemptEvaluationService:
             response.is_correct = ratio == 1
             response.save()
 
+            return point_awarded
         except Exception as e:
             logger.error(str(e))
+            return 0.0
 
-    def handle_numeric(self,question:Question,answer_value:Any,response:QuestionResponse):
-        pass
+    def handle_numeric(self,question:Question,answer_value:Any,response:QuestionResponse)-> float:
+        return 0.0
 
-    def handle_text(self,question:Question,answer_value:Any,response:QuestionResponse):
-        pass
+    def handle_text(self,question:Question,answer_value:Any,response:QuestionResponse)-> float:
+        return 0.0
 
-    def handle_likert(self,question:Question,answer_value:Any,response:QuestionResponse):
-        pass
+    def handle_likert(self,question:Question,answer_value:Any,response:QuestionResponse)-> float:
+        return 0.0
 
-    def handle_ranking(self,question:Question,answer_value:Any,response:QuestionResponse):
-        pass
+    def handle_ranking(self,question:Question,answer_value:Any,response:QuestionResponse)-> float:
+        return 0.0
     
+    @property
+    def build_response(self) ->dict[str,Any]:
+        """Builds a report dictionary
+
+        Returns:
+            dict[str,Any]: report dictionary
+        """
+
+        try:
+            self.setup()
+            total_points:float = self.handle_answers()
+            percentage = (total_points /
+                          float(self.questionnaire.max_score) if float(self.questionnaire.max_score) > 0 else 0.0) * 100
+            passed = percentage >= 50
+            score = total_points
+            feedback = Feedback.from_percentage(percentage)
+            message = feedback.message.split(".")
+
+            response = {
+                "percentage":round(percentage,2),
+                "passed":passed,
+                "score":round(score,2),
+                "max_score":float(self.questionnaire.max_score),
+                "feedback":message,
+                "details":str(self.questionnaire.description),
+                "email_sent":False,
+                "attempt_id":self.attempt_id,
+
+            }
+
+            return response
+        except Exception as e:
+            logger.error(str(e))
+            return {}
