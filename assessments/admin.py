@@ -349,7 +349,7 @@ class AttemptScoreAdmin(admin.ModelAdmin):
         pct = float(obj.percentage)
         colour = "#4caf50" if pct >= 75 else "#ff9800" if pct >= 50 else "#f44336"
         return format_html(
-            '<span style="color:{}; font-weight:bold;">{:.1f}%</span>',
+            '<span style="color:{}; font-weight:bold;">{}%</span>',
             colour,
             pct,
         )

@@ -15,16 +15,11 @@
 {% endblock %}
 
 {% block content %}
-<!-- URL / data injection -->
-<script>
-  window.DB_STATS_URL = "{% url 'user_dashboard' %}";
-  window.MY_Q_URL    = "";
-  window.RESULTS_URL = "";
-</script>
+
 <form id="dbCsrfForm" class="hidden">{% csrf_token %}</form>
 
 <div class="db-page">
-
+  {{data|json_script:'db-data'}}
   <!-- Welcome -->
   <section class="db-welcome" aria-labelledby="dbWelcomeTitle">
     <div class="db-welcome__copy">
@@ -159,6 +154,16 @@
 
   </div><!-- /db-grid -->
 </div><!-- /db-page -->
+
+<!-- URL / data injection -->
+<script>
+  window.DB_STATS_URL = "{% url 'user_dashboard' %}";
+  window.DB_DATA= JSON.parse(
+    document.getElementById('db-data').textContent
+  );
+  window.MY_Q_URL    = "";
+  window.RESULTS_URL = "";
+</script>
 {% endblock %}
 
 {% block extra_js %}

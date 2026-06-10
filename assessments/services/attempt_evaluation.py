@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 from ..models import *
-from ..forms import QuestionResponseForm
+from ..forms import QuestionResponseForm,AttemptScoreForm
 
 class AttemptEvaluationService:
     def __init__(self,request:HttpRequest):
@@ -22,6 +22,7 @@ class AttemptEvaluationService:
         self.send_email:bool = self.body_data.get('send_email')
         self.questionnaire = None
         self.attempt_id = None
+        self.attempt_instance = None
 
     def setup(self):
         prefetch_questions = Prefetch(
@@ -60,6 +61,7 @@ class AttemptEvaluationService:
             )
 
             attempt_instance.save()
+            self.attempt_instance = attempt_instance
 
             points_awarded:float = 0.0
 
@@ -212,6 +214,23 @@ class AttemptEvaluationService:
                 "attempt_id":self.attempt_id,
 
             }
+
+            # save to attempt score
+            attempt_score_data = {
+                "attempt":self.attempt_instance,
+                "raw_score":round(score,2),
+                "weighted_score":round(score,2),
+                "percentage":round(min(max(percentage, 0), 100), 2)
+            }
+            
+            attempt_score_form = AttemptScoreForm(attempt_score_data)
+
+            if not attempt_score_form.is_valid():
+                logger.error(str(attempt_score_form.errors))
+                return {}
+            
+            attempt_score_form.save()
+            
 
             return response
         except Exception as e:

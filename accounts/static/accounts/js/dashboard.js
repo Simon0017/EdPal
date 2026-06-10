@@ -85,7 +85,7 @@ function initCategoryChart(labels, values) {
   const ctx = document.getElementById('dbCategoryChart');
   if (!ctx) return;
 
-  const palette = ['#E85D04','#F97316','#FB923C','#38bdf8','#a3e635','#f472b6','#818cf8'];
+  const palette = ['#E85D04','#21c5e2','#12ac6b','#38bdf8','#a3e635','#f472b6','#818cf8'];
 
   return new Chart(ctx, {
     type: 'doughnut',
@@ -264,12 +264,7 @@ function init3D() {
 /* ── Fetch dashboard data ── */
 async function loadDashboardData() {
   try {
-    const res = await fetch(window.DB_STATS_URL + '?format=json', {
-      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-    });
-    if (!res.ok) throw new Error('fetch failed');
-    const data = await res.json();
-
+    const data = window.DB_DATA;
     fillStats(data);
 
     const labels = (data.score_trend || []).map(p => p.label);

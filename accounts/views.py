@@ -16,6 +16,7 @@ from rest_framework import status
 import json
 from core.decorators import outer_exception_handler
 from core.tasks.email_tasks import send_welcome_email,send_reset_password_email
+from .services.dashboard_pop import DashboardService
 
 logger = logging.getLogger(__name__)
 token_generator = PasswordResetTokenGenerator()
@@ -240,7 +241,24 @@ class UserDashboard(View):
     @method_decorator(login_required)
     @method_decorator(outer_exception_handler(logger))
     def get(self,request:HttpRequest,*args,**kwargs):
-        return render(request,self.template_name)
+        dashboard = DashboardService(request)
+        metrics = dashboard.stats
+        score_trends = dashboard.score_trend
+        latest_q = dashboard.latest_questionnaires
+        trending_tags = dashboard.trending_tags
+        category = dashboard.category
+
+        context = {
+            "data":{
+                **metrics,
+                "score_trend":score_trends,
+                "latest_questionnaires":latest_q,
+                "trending_tags":trending_tags,
+                "categories":category
+            }
+        }
+
+        return render(request,self.template_name,context)
     
     @method_decorator(login_required)
     @method_decorator(outer_exception_handler(logger))

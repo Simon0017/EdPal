@@ -7,8 +7,9 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET
 from django.shortcuts import get_object_or_404
 from django.http import HttpRequest,JsonResponse
-from django.db.models import Prefetch,Count,Avg,Max,Min
+from django.db.models import Prefetch,Count,Avg,Max,Min,Q
 import json
+import statistics
 
 from core.decorators import outer_exception_handler
 from .forms import (
@@ -269,12 +270,40 @@ class UserResults(View):
     @method_decorator(login_required)
     @method_decorator(outer_exception_handler(logger))
     def get(self,request:HttpRequest,*args,**kwargs):
-        attempts = (
-            QuestionnaireAttempt.objects
-            .prefetch_related("question_responses")
-            .filter(profile=request.user.profile)
+        attempts = QuestionnaireAttempt.objects.filter(
+            profile=request.user.profile
+        ).prefetch_related("question_responses", "score")
+
+        metrics = attempts.aggregate(
+            total=Count("id"),
+            completed=Count("id", filter=Q(status="COMPLETED")),
+            avg_pct=Avg("score__percentage"),
+            best_score=Max("score__percentage"),
+            passed=Count("id", filter=Q(score__percentage__gt=50))
         )
-        return render(request,self.template_name)
+
+        metrics["avg_pct"] = round(metrics["avg_pct"] or 0, 1)
+        metrics["best_score"] = round(metrics["best_score"] or 0, 1)
+
+        data = {
+                **metrics,
+                "results":[
+                    {
+                        "title":attempt.questionnaire.title,
+                        "completed_at":attempt.completed_at,
+                        "attempt_number":attempt.attempt_number,
+                        "passed":attempt.score.percentage > 50,
+                        "percentage":round(attempt.score.percentage,1),
+
+
+                    } for attempt in attempts 
+                ]
+        }
+
+        context = {
+            "data":data
+        }
+        return render(request,self.template_name,context)
     
     @method_decorator(login_required)
     @method_decorator(outer_exception_handler(logger))

@@ -385,7 +385,7 @@ class AttemptScore(models.Model):
 
     raw_score        = models.DecimalField(max_digits=10, decimal_places=4)
     weighted_score   = models.DecimalField(max_digits=10, decimal_places=4)
-    percentage       = models.DecimalField(max_digits=6, decimal_places=4)
+    percentage       = models.DecimalField(max_digits=5, decimal_places=2)
 
     percentile_rank  = models.DecimalField(
         max_digits=6, decimal_places=4,
@@ -393,7 +393,7 @@ class AttemptScore(models.Model):
         help_text="Async-computed. NULL until population data available."
     )
 
-    scoring_engine_version = models.CharField(max_length=20, default="1.0.0")
+    scoring_engine_version = models.CharField(max_length=20, default="1.0.0",blank=True)
     computed_at      = models.DateTimeField(auto_now_add=True)
 
     class Meta:

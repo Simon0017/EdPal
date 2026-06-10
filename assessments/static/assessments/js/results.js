@@ -14,7 +14,8 @@ async function loadResults() {
   try {
     
     const data = window.DATA;
-
+    console.log(data);
+    
     fillStrip(data);
     renderRows(data.results || data.attempts || []);
   } catch (_) {
