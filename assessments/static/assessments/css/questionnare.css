@@ -463,3 +463,10 @@
   background: none; border: none; cursor: pointer;
   color: inherit; font-size: 0.9rem; line-height: 1; padding: 0;
 }
+
+/* Import bar above stepper */
+.qn-import-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--spacing-md);
+}

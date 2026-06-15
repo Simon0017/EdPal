@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'analytics',
     'core',
     'accounts',
     'assessments',
@@ -53,6 +54,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "analytics.middleware.activity_tracker.ActivityTrackerMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -279,6 +281,11 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
+        'analytics': {  
+            'handlers': ['console','file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
     },
 }
 
@@ -450,3 +457,7 @@ JAZZMIN_UI_TWEAKS = {
         "success": "btn-success",
     },
 }
+
+# Analytics
+ANALYTICS_GEOIP_ENABLED=True
+ANALYTICS_GEOIP_PATH= BASE_DIR / "analytics" / "services" / "geo"

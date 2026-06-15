@@ -5,19 +5,10 @@ import logging
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET
-from django.shortcuts import get_object_or_404
 from django.http import HttpRequest,JsonResponse
 from django.db.models import Prefetch,Count,Avg,Max,Min,Q
-import json
-import statistics
 
 from core.decorators import outer_exception_handler
-from .forms import (
-    QuestionForm,
-    QuestionnaireForm,
-    QuestionnaireTagForm,
-    AnswerChoiceForm
-)
 from .models import *
 
 from .services.questionnare_post import CreateQuestionniare
@@ -121,13 +112,14 @@ class ManageQuestionnares(View):
             .annotate(
                 attempts_count=Count("attempts", distinct=True),
                 participants_count=Count("attempts__profile", distinct=True),
-                average_score=Avg("attempts__score"),
-                highest_score=Max("attempts__score"),
-                lowest_score=Min("attempts__score"),
+                average_score=Avg("attempts__score__percentage"),
+                highest_score=Max("attempts__score__percentage"),
+                lowest_score=Min("attempts__score__percentage"),
+                completion_count=Count("attempts", filter=Q(attempts__status="COMPLETED"))
             )
             .first()
         )
-
+        
         data = {
             "id": questionnaire.id,
             "title": questionnaire.title,
@@ -136,15 +128,27 @@ class ManageQuestionnares(View):
             "modified_at": questionnaire.modified_at,
             "attempts_count": questionnaire.attempts_count,
             "participants_count": questionnaire.participants_count,
-            "average_score": questionnaire.average_score,
-            "highest_score": questionnaire.highest_score,
-            "lowest_score": questionnaire.lowest_score,
+            "average_score": round(float(questionnaire.average_score),2),
+            "highest_score": float(questionnaire.highest_score),
+            "lowest_score": float(questionnaire.lowest_score),
             "description": questionnaire.description,
             "max_score": questionnaire.max_score,
             "time_limit_minutes": questionnaire.time_limit_minutes,
             "is_randomised": questionnaire.is_randomised,
+            "completion_rate":round(float(float(questionnaire.completion_count) / float(questionnaire.attempts_count) if float(questionnaire.attempts_count) > 0 else  0) * 100,2)
         }
+
+        questionnaire.questionnairetag_set.all()
+        data['tags'] = [
+            {
+                'is_primary': t.is_primary,
+                'coupling_strength': t.coupling_strength,
+                'tag': t.tag.title
+            }
+            for t in questionnaire.questionnairetag_set.select_related("tag")
+        ]
         
+
         data["questions"] = [
             {
                 "id": q.id,

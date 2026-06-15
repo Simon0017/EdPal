@@ -240,7 +240,7 @@ function renderSplitList (filterQuery = '') {
       <span class="qm-split-item__title">${q.title}</span>
       <span class="qm-split-item__meta">
         ${badgeHtml(q.status)}
-        <span>${fmtDate(q.date_modified)}</span>
+        <span>${fmtDate(q.modified_at)}</span>
       </span>
     </li>
   `).join('');

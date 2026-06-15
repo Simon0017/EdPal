@@ -939,10 +939,83 @@ async function submitForm () {
   }
 }
 
+/**
+ * Receives parsed { meta, questions, choices } from QuestionnaireParser
+ * and populates the form, then jumps to Step 5 (review).
+ */
+function _applyParsedPayload (payload) {
+  const { meta, questions, choices } = payload;
+
+  /* ── Step 1 meta fields ── */
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+  setVal('id_title',              meta.title);
+  setVal('id_description',        meta.description);
+  setVal('id_instructions',       meta.instructions);
+  setVal('id_status',             meta.status);
+  setVal('id_max_score',          meta.max_score);
+  setVal('id_time_limit_minutes', meta.time_limit_minutes);
+  if (meta.is_randomised && String(meta.is_randomised).toLowerCase() !== 'false') {
+    const cb = document.getElementById('id_is_randomised');
+    if (cb) cb.checked = true;
+  }
+
+  /* ── Step 3 questions — clear existing then rebuild ── */
+  const qList = document.getElementById('questionList');
+  qList.innerHTML = '';
+  questions.forEach((q, i) => {
+    const entry = buildQuestionEntry(i);
+    /* Populate fields inside the freshly built entry */
+    const get = name => entry.querySelector(`[name="${name}"]`);
+    if (get('question_text'))       get('question_text').value       = q.question_text       || '';
+    if (get('question_type'))       get('question_type').value       = q.question_type       || 'MCQ';
+    if (get('weight'))              get('weight').value              = q.weight              || '';
+    if (get('max_points'))          get('max_points').value          = q.max_points          || '';
+    if (get('order'))               get('order').value               = q.order               || i + 1;
+    if (get('randomisation_group')) get('randomisation_group').value = q.randomisation_group || '';
+    if (get('explanation'))         get('explanation').value         = q.explanation         || '';
+    if (get('numeric_config_raw'))  get('numeric_config_raw').value  = q.numeric_config_raw  || '';
+    if (get('is_required') && (q.is_required === false || q.is_required === 'false'))
+      get('is_required').checked = false;
+
+    qList.appendChild(entry);
+  });
+  // updateAddCareerButton && 
+  updatePointsWidget();
+
+  /* ── Step 4 choices — clear existing then rebuild ── */
+  const cList = document.getElementById('choiceList');
+  cList.innerHTML = '';
+  choices.forEach((c, i) => {
+    const entry = buildChoiceEntry(i);
+    const get = name => entry.querySelector(`[name="${name}"]`);
+    if (get('choice_key'))            get('choice_key').value            = c.choice_key            || '';
+    if (get('choice_text'))           get('choice_text').value           = c.choice_text           || '';
+    if (get('partial_score'))         get('partial_score').value         = c.partial_score         || '';
+    if (get('choice_order'))          get('choice_order').value          = c.choice_order          || i + 1;
+    if (get('choice_explanation'))    get('choice_explanation').value    = c.choice_explanation    || '';
+    if (get('choice_question_index')) get('choice_question_index').value = c.choice_question_index || '0';
+    if (get('is_correct') && (c.is_correct === true || c.is_correct === 'true' || c.is_correct === 'on'))
+      get('is_correct').checked = true;
+    cList.appendChild(entry);
+  });
+
+  /* ── Jump straight to Step 5 (review) ── */
+  goToStep(5);
+}
+
 /* ─────────────────────────────────────────────────────────────
    BOOT
 ───────────────────────────────────────────────────────────────*/
 function init () {
+  /* ── File import via parser modal ── */
+  document.getElementById('qnBtnImport').addEventListener('click', () => {
+    QuestionnaireParser.openModal();
+  });
+
+  QuestionnaireParser.onComplete = function (payload) {
+    _applyParsedPayload(payload);
+  };
+
   /* Step navigation */
   document.getElementById('qnBtnNext').addEventListener('click', () => {
     if (validateStep()) goToStep(currentStep + 1);
