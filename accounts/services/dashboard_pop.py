@@ -7,6 +7,7 @@ from django.http import HttpResponse
 import logging
 from typing import Any
 from collections import Counter
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -132,3 +133,23 @@ class DashboardService():
         except Exception as e:
             logger.error(str(e))
             return []
+        
+    
+    @property
+    def quote_of_the_day(self): # cache this 
+        try:
+            response = requests.get("https://zenquotes.io/api/today")
+            response.raise_for_status()
+
+            quote = response.json()[0]
+
+            return {
+                "author":quote["a"],
+                "quote":quote["q"]
+            }
+        except Exception as e:
+            logger.error(str(e))
+            return {
+                "author":"Albert Camus",
+                "quote":"One must imagine Sisyphus happy."
+            }

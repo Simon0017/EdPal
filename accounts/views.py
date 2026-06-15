@@ -247,6 +247,7 @@ class UserDashboard(View):
         latest_q = dashboard.latest_questionnaires
         trending_tags = dashboard.trending_tags
         category = dashboard.category
+        quote = dashboard.quote_of_the_day
 
         context = {
             "data":{
@@ -255,7 +256,8 @@ class UserDashboard(View):
                 "latest_questionnaires":latest_q,
                 "trending_tags":trending_tags,
                 "categories":category
-            }
+            },
+            "quote":quote
         }
 
         return render(request,self.template_name,context)
