@@ -49,6 +49,7 @@ DEFAULT_EXCLUDED_PATHS: List[str] = [
     "/static/",
     "/media/",
     "/favicon.ico",
+    "/.well-known/"
 ]
 
 

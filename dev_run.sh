@@ -9,7 +9,7 @@ py manage.py runserver &
 
 
 echo "Starting the background celery worker..."
-celery -A EdPal worker --loglevel=info --pool=solo &
+celery -A EdPal worker --loglevel=info --pool=solo -E &
 
 echo "Start celery beat for scheduled workers..."
 celery -A EdPal beat --loglevel=info &

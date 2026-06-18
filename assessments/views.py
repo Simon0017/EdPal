@@ -13,6 +13,11 @@ from .models import *
 
 from .services.questionnare_post import CreateQuestionniare
 from .services.attempt_evaluation import AttemptEvaluationService
+from .services.fetch_questionnaires import FetchQuestionnairesService
+from accounts.services.roles import (
+    is_staff
+)
+from django.contrib.auth.decorators import user_passes_test
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +25,7 @@ logger = logging.getLogger(__name__)
 '''
 CBV(s)
 '''
+@method_decorator(user_passes_test(is_staff),name='dispatch')
 class AdminQuestinnare(View):
     '''Provides crud operations for staff to adminiter the questionare and questions'''
     template_name = "assessments/questionnare.html"
@@ -74,9 +80,9 @@ class AdminQuestinnare(View):
             )
 
 
-
+@method_decorator(user_passes_test(is_staff),name='dispatch')
 class ListQuestionnares(View):
-    '''Provides crud operations for staff to adminiter the questionare and questions'''
+    '''Provides crud operations for staff to list and manage the questionnaire'''
     template_name = "assessments/questionnare_manage.html"
     
     @method_decorator(login_required)
@@ -91,8 +97,9 @@ class ListQuestionnares(View):
         pass
 
 
+@method_decorator(user_passes_test(is_staff),name='dispatch')
 class ManageQuestionnares(View):
-    '''Provides crud operations for staff to adminiter the questionare and questions'''
+    '''Provides crud operations for staff to manage the questionnaire'''
     template_name = "assessments/questionnare.html"
     
     @method_decorator(login_required)
@@ -313,6 +320,20 @@ class UserResults(View):
     @method_decorator(outer_exception_handler(logger))
     def post(self,request:HttpRequest,*args,**kwargs):
         pass
+
+
+class FetchQuestionnaires(View):
+    @method_decorator(login_required)
+    @method_decorator(outer_exception_handler(logger))
+    def get(self,request:HttpRequest,*args,**kwargs):
+        service = FetchQuestionnairesService(request)
+        response_data = service.get_paginated_response()
+        
+        if not response_data.get("success", True):
+            return JsonResponse(response_data, status=400)
+
+        return JsonResponse(response_data, status=200)
+
 ''''
 FBVS
 '''

@@ -1,4 +1,4 @@
-/* questionnaires.js */
+/* user_questionnaires.js */
 
 const csrf = () =>
   (document.querySelector('#qsCsrfForm input[name="csrfmiddlewaretoken"]') || {}).value || '';
@@ -83,17 +83,17 @@ function buildActions(q) {
   const parts = [];
 
   if (q.status === 'in_progress' && q.attempt_id) {
-    parts.push(`<a href="${window.QS_ATTEMPT_URL}?attempt=${q.attempt_id}" class="qs-btn qs-btn--primary">Continue</a>`);
+    parts.push(`<a href="${window.QS_ATTEMPT_URL.replace('1', q.id)}" class="qs-btn qs-btn--primary">Continue</a>`);
   } else if (q.status !== 'archived') {
-    parts.push(`<a href="${window.QS_ATTEMPT_URL}?q=${q.id}" class="qs-btn qs-btn--primary">Start</a>`);
+    parts.push(`<a href="${window.QS_ATTEMPT_URL.replace('1', q.id)}" class="qs-btn qs-btn--primary">Start</a>`);
   }
 
   if (q.status === 'completed' && q.attempt_id) {
-    parts.push(`<a href="${window.QS_RESULTS_URL}?attempt=${q.attempt_id}" class="qs-btn">View Results</a>`);
+    parts.push(`<a href="${window.QS_RESULTS_URL}" class="qs-btn">View Results</a>`);
   }
 
   if (q.status === 'completed' && q.attempt_id) {
-    parts.push(`<a href="${window.QS_ATTEMPT_URL}?q=${q.id}" class="qs-btn">Retake</a>`);
+    parts.push(`<a href="${window.QS_ATTEMPT_URL.replace('1', q.id)}" class="qs-btn">Retake</a>`);
   }
 
   return parts.join('');
@@ -191,6 +191,7 @@ function setFilter(filter) {
 
 /* ── Boot ── */
 function init() {
+  
   fetchQuestionnaires();
 
   document.getElementById('qsListBtn').addEventListener('click', () => setView('list'));

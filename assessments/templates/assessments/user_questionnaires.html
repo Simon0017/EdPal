@@ -18,8 +18,8 @@
 
 {% block content %}
 <script>
-  window.QS_LIST_URL   = "";
-  window.QS_ATTEMPT_URL = "";
+  window.QS_LIST_URL   = "{% url 'fetch_questionnaires' %}";
+  window.QS_ATTEMPT_URL = "{% url 'attempt_questionnare' pk=1 %}";
   window.QS_RESULTS_URL = "";
 </script>
 <form id="qsCsrfForm" class="hidden">{% csrf_token %}</form>

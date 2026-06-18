@@ -9,4 +9,5 @@ urlpatterns = [
     path("attempt-questionnare/<int:pk>",AttemptQuestionnaire.as_view(),name="attempt_questionnare"),
     path("user-questionnares",UserQuestionnaires.as_view(),name="user_questionnares"),
     path("user-results",UserResults.as_view(),name="user_results"),
+    path('fetch-questionnaires',FetchQuestionnaires.as_view(),name='fetch_questionnaires'),
 ]
