@@ -50,7 +50,13 @@ INSTALLED_APPS = [
     'assessments',
     'careers',
     'django_celery_beat',
+    'guardian',
 ]
+
+AUTHENTICATION_BACKENDS = (
+    "django.contrib.auth.backends.ModelBackend",
+    "guardian.backends.ObjectPermissionBackend",
+)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

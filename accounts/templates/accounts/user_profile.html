@@ -1,0 +1,135 @@
+{% extends "core/user_nav.html" %}
+{% load static %}
+{% block title %}EdPal | {{ request.user.first_name|default:request.user.username }}'s profile {% endblock %}
+{% block nav_profile %}un-nav__item--active{% endblock %}
+
+{% block breadcrumbs %}
+  <a href="{% url 'user_dashboard' %}" class="un-breadcrumbs__item">Dashboard</a>
+  <span class="un-breadcrumbs__sep">/</span>
+  <span class="un-breadcrumbs__item un-breadcrumbs__item--current">Profile</span>
+{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'accounts/css/user_profile.css' %}">
+
+  <!-- Bootstrap (layout only) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+
+  <!-- Quill rich text editor -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css">
+{% endblock %}
+
+{% block content %}
+
+<div class="container py-4 profile-page" id="profilePage">
+
+  <!-- Server-provided data -->
+  {{data|json_script:'user-data'}}
+
+  <div id="profileToast" class="profile-toast hidden" role="status" aria-live="polite"></div>
+
+  <div class="card profile-card">
+
+    <!-- ── Header row: avatar + name/username/email ── -->
+    <div class="profile-card__header">
+
+      <div class="profile-avatar" id="avatarDropzone" tabindex="0" role="button"
+           aria-label="Click or drag an image to change your profile picture">
+        <img id="avatarPreview" src="" alt="Profile picture" class="profile-avatar__img hidden">
+        <span id="avatarPlaceholder" class="profile-avatar__placeholder">+</span>
+        <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/jpg" class="profile-avatar__file" aria-hidden="true">
+      </div>
+
+      <div class="profile-header__info">
+        <h1 class="profile-name" id="profileName">—</h1>
+        <p class="profile-username" id="profileUsername">—</p>
+        <p class="profile-email" id="profileEmail">—</p>
+      </div>
+
+      <div class="profile-header__actions">
+        <button type="button" id="btnEdit" class="btn-primary">Edit profile</button>
+        <button type="button" id="btnSave" class="btn-primary hidden">Save changes</button>
+        <button type="button" id="btnCancel" class="btn-ghost hidden">Cancel</button>
+      </div>
+    </div>
+
+    <!-- ── Status / error banner ── -->
+    <div id="profileError" class="form-error-banner hidden" role="alert" aria-live="assertive"></div>
+
+    <!-- ── Form (also serves as no-JS fallback) ── -->
+    <form id="profileForm" method="POST" action="/accounts/profile/update/" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+
+      <div class="profile-grid">
+
+        <!-- First name -->
+        <div class="form-group">
+          <label class="form-label" for="id_first_name">First name</label>
+          <input class="form-input profile-input" type="text" id="id_first_name" name="first_name" disabled>
+        </div>
+
+        <!-- Last name -->
+        <div class="form-group">
+          <label class="form-label" for="id_last_name">Last name</label>
+          <input class="form-input profile-input" type="text" id="id_last_name" name="last_name" disabled>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group profile-col-full">
+          <label class="form-label" for="id_email">Email address</label>
+          <input class="form-input profile-input" type="email" id="id_email" name="email" disabled>
+          <span id="err_email" class="form-error" role="alert" aria-live="polite"></span>
+        </div>
+
+        <!-- Date of birth -->
+        <div class="form-group">
+          <label class="form-label" for="id_date_of_birth">Date of birth</label>
+          <input class="form-input profile-input" type="date" id="id_date_of_birth" name="date_of_birth" disabled>
+        </div>
+
+        <!-- Subjects -->
+        <div class="form-group profile-col-full">
+          <label class="form-label" for="subjectSearch">Subjects</label>
+          <div class="profile-subjects" id="subjectsWrap">
+            <div class="profile-chip-list" id="subjectChips" aria-live="polite"></div>
+            <div class="profile-subject-search hidden" id="subjectSearchWrap">
+              <input
+                type="text"
+                id="subjectSearch"
+                class="form-input"
+                placeholder="Search subjects…"
+                autocomplete="off"
+                role="combobox"
+                aria-expanded="false"
+                aria-controls="subjectDropdown"
+                aria-autocomplete="list"
+              >
+              <div id="subjectDropdown" class="profile-subject-dropdown" role="listbox"></div>
+            </div>
+          </div>
+          <!-- No-JS fallback -->
+          <input type="hidden" id="subjectIdsInput" name="subject_ids" value="[]">
+        </div>
+
+        <!-- About me -->
+        <div class="form-group profile-col-full">
+          <label class="form-label" for="aboutMeEditor">About me</label>
+          <div id="aboutMeEditor" class="profile-quill"></div>
+          <!-- No-JS fallback -->
+          <textarea id="id_about_me" name="about_me" class="hidden"></textarea>
+        </div>
+
+      </div>
+    </form>
+
+  </div><!-- /.profile-card -->
+</div>
+
+<!-- Quill JS -->
+<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+<!-- Bootstrap JS (layout helpers only) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="{% static 'accounts/js/user_profile.js' %}"></script>
+
+{% endblock %}

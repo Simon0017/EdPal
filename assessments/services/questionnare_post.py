@@ -12,6 +12,7 @@ from ..forms import (
     AnswerChoiceForm
 )
 import logging
+from .utils import assign_full_access
 
 logger = logging.getLogger(__name__)
 
@@ -151,12 +152,14 @@ class CreateQuestionniare:
             questionnaire = questionnaire_form.save(commit=False)
             questionnaire.created_by = self.user
             questionnaire.save()
+            assign_full_access(self.user,"assessment",questionnaire)
 
             # Save tags
             for form in tag_objects:
                 tag_obj = form.save(commit=False)
                 tag_obj.questionnaire = questionnaire
                 tag_obj.save()
+                assign_full_access(self.user,"assessment",tag_obj)
 
             # Save questions — keep a positional map for choice FK assignment
             saved_questions = {}                      # { original_index: Question instance }
@@ -165,12 +168,14 @@ class CreateQuestionniare:
                 question.questionnaire = questionnaire
                 question.save()
                 saved_questions[original_idx] = question
+                assign_full_access(self.user,"assessment",question)
 
             # Save choices — resolve FK from saved_questions map
             for q_idx, form in choice_forms:
                 choice = form.save(commit=False)
                 choice.question = saved_questions[q_idx]
                 choice.save()
+                assign_full_access(self.user,"assessment",choice)
 
             return True
         except Exception as e:

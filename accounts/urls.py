@@ -8,4 +8,6 @@ urlpatterns = [
     path("reset-password/<int:uid>/<str:token>/", ResetPassword.as_view(), name="reset_password"),
     path("search-subject",search_subjects_re,name="search_subjects"),
     path("user-dashboard",UserDashboard.as_view(),name="user_dashboard"),
+    path('user-profile',UserProfile.as_view(),name='user_profile'),
+    path('user-settings',UserSettings.as_view(),name='user_settings'),
 ]

@@ -1,0 +1,292 @@
+/*
+ * profile.css
+ * Namespaced to .profile-* to avoid collisions with other pages.
+ * Consumes design tokens from registration.css (var(--...)) — no redeclaration.
+ */
+
+.profile-page {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+/* ══ CARD ══ */
+.profile-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl, 1rem);
+  padding: var(--spacing-xl, 2rem);
+  box-shadow: var(--shadow-lg);
+}
+
+html.theme-dark .profile-card {
+  background: var(--color-card);
+  border-color: var(--color-border);
+}
+
+html:not(.theme-dark) .profile-card {
+  background: #ffffff;
+  border-color: #e5e7eb;
+}
+
+/* ══ HEADER ══ */
+.profile-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg, 1.5rem);
+  margin-bottom: var(--spacing-xl, 2rem);
+  flex-wrap: wrap;
+}
+
+.profile-header__info { flex: 1; min-width: 0; }
+
+.profile-name {
+  font-family: var(--font-display, inherit);
+  font-size: 1.375rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text, var(--color-foreground));
+  letter-spacing: -0.02em;
+}
+
+.profile-username,
+.profile-email {
+  font-size: 0.8125rem;
+  color: var(--text-muted, var(--color-muted));
+  margin: 0.125rem 0 0;
+}
+
+.profile-header__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* ══ AVATAR ══ */
+.profile-avatar {
+  position: relative;
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: var(--radius-full, 9999px);
+  border: 2px dashed var(--border, var(--color-border));
+  background: var(--color-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s ease;
+}
+
+.profile-avatar:hover,
+.profile-avatar:focus-visible {
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+.profile-avatar--dragover {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(232,93,4,.18);
+}
+
+.profile-avatar__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.profile-avatar__img.hidden { display: none; }
+
+.profile-avatar__placeholder {
+  font-size: 1.75rem;
+  color: var(--text-muted, var(--color-muted));
+  line-height: 1;
+}
+
+.profile-avatar__file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+
+/* ══ GRID ══ */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md, 1rem);
+}
+
+.profile-col-full { grid-column: 1 / -1; }
+
+.profile-input:disabled {
+  opacity: 0.85;
+  cursor: default;
+  background: var(--color-background);
+  color: var(--text, var(--color-foreground));
+}
+
+/* Date inputs lose their calendar icon when disabled in most browsers —
+   use readonly instead so the picker still works but the field can't be typed into directly when not editing */
+input[type="date"].profile-input:disabled {
+  -webkit-appearance: none;
+}
+/* ══ SUBJECT CHIPS ══ */
+.profile-subjects {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.profile-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  background: rgba(232,93,4,.1);
+  border: 1px solid rgba(232,93,4,.25);
+  border-radius: var(--radius-full, 9999px);
+  font-size: 0.8125rem;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.profile-chip__remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.profile-chip__remove:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ══ SUBJECT SEARCH DROPDOWN ══ */
+.profile-subject-search { position: relative; }
+.profile-subject-search.hidden { display: none; }
+
+.profile-subject-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--surface, var(--color-card));
+  border: 1px solid var(--border, var(--color-border));
+  border-radius: var(--radius-md, 0.5rem);
+  box-shadow: var(--shadow-lg);
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+}
+
+.profile-subject-dropdown.open { display: block; }
+
+.profile-subject-option {
+  padding: 0.5rem 0.875rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text, var(--color-foreground));
+}
+
+.profile-subject-option:hover,
+.profile-subject-option.focused {
+  background: var(--surface-hover, var(--color-card-hover));
+  color: var(--color-primary);
+}
+
+.profile-subject-option--empty {
+  color: var(--text-muted, var(--color-muted));
+  cursor: default;
+}
+
+/* ══ QUILL EDITOR ══ */
+.profile-quill {
+  background: var(--color-background);
+  border: 1px solid var(--border, var(--color-border));
+  border-radius: var(--radius-md, 0.5rem);
+  min-height: 140px;
+}
+
+.profile-quill .ql-toolbar {
+  border: none;
+  border-bottom: 1px solid var(--border, var(--color-border));
+}
+
+.profile-quill .ql-container {
+  border: none;
+  font-family: var(--font-sans, inherit);
+}
+
+.profile-quill .ql-editor {
+  color: var(--text, var(--color-foreground));
+  min-height: 120px;
+}
+
+.profile-quill .ql-editor.ql-blank::before {
+  color: var(--text-muted, var(--color-muted));
+}
+
+/* Toolbar icons/text also hardcode dark colors by default */
+.profile-quill .ql-toolbar .ql-stroke {
+  stroke: var(--text-muted, var(--color-muted));
+}
+
+.profile-quill .ql-toolbar .ql-fill {
+  fill: var(--text-muted, var(--color-muted));
+}
+
+.profile-quill .ql-toolbar button:hover .ql-stroke,
+.profile-quill .ql-toolbar button.ql-active .ql-stroke {
+  stroke: var(--color-primary);
+}
+
+.profile-quill .ql-toolbar button:hover .ql-fill,
+.profile-quill .ql-toolbar button.ql-active .ql-fill {
+  fill: var(--color-primary);
+}
+
+.profile-quill.profile-quill--disabled .ql-toolbar {
+  display: none;
+}
+
+.profile-quill.profile-quill--disabled .ql-container {
+  background: var(--bg, var(--color-background));
+}
+
+/* ══ TOAST ══ */
+.profile-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-md, 0.5rem);
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+}
+
+.profile-toast.hidden { display: none; }
+.profile-toast--success { background: #16a34a; color: #fff; }
+.profile-toast--error   { background: var(--color-error, #ef4444); color: #fff; }
+
+/* ══ RESPONSIVE ══ */
+@media (max-width: 600px) {
+  .profile-grid { grid-template-columns: 1fr; }
+  .profile-card__header { flex-direction: column; align-items: flex-start; }
+  .profile-header__actions { width: 100%; }
+}

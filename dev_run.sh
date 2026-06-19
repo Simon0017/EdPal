@@ -14,6 +14,9 @@ celery -A EdPal worker --loglevel=info --pool=solo -E &
 echo "Start celery beat for scheduled workers..."
 celery -A EdPal beat --loglevel=info &
 
+echo "Start celery flower..."
+celery -A Edpal flower &
+
 # running from the dir of the minio server ie C:\minio
 echo "Starting the minio server..."
 C:\\minio\\minio.exe server C:\\minio\\data --license C:\\minio\\minio.license &

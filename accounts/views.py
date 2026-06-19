@@ -230,7 +230,7 @@ class ResetPassword(View):
         
         return JsonResponse({
             "success":True,
-            "messsage":"Check your email to reset the password"
+            "messsage":"Password reset completed successfully"
         },status=status.HTTP_202_ACCEPTED)
     
     
@@ -258,6 +258,65 @@ class UserDashboard(View):
                 "categories":category
             },
             "quote":quote
+        }
+
+        return render(request,self.template_name,context)
+    
+    @method_decorator(login_required)
+    @method_decorator(outer_exception_handler(logger))
+    def post(self,request:HttpRequest,*args,**kwargs):
+        pass
+
+
+
+class UserProfile(View):
+    '''Handles rendering the user profile'''
+    template_name = "accounts/user_profile.html"
+
+    @method_decorator(login_required)
+    @method_decorator(outer_exception_handler(logger))
+    def get(self,request:HttpRequest,*args,**kwargs):
+        data = {
+            "user": {
+                "id": request.user.id,
+                "username": request.user.username,
+                "first_name": request.user.first_name,
+                "last_name":request.user.last_name,
+                "email":request.user.email
+            },
+            "profile": {
+                "date_of_birth": request.user.profile.date_of_birth.strftime("%Y-%m-%d"),
+                "about_me": request.user.profile.about_me,
+                "avatar_url": request.user.profile.avatar.url if request.user.profile.avatar else None,
+                "subjects": list(request.user.profile.subjects.values_list("name",flat=True))
+            }
+        }
+
+        context = {
+            "data":data
+        }
+
+        return render(request,self.template_name,context)
+    
+    @method_decorator(login_required)
+    @method_decorator(outer_exception_handler(logger))
+    def post(self,request:HttpRequest,*args,**kwargs):
+        pass
+
+
+class UserSettings(View):
+    '''Handles rendering the user settings'''
+    template_name = "accounts/user_settings.html"
+
+    @method_decorator(login_required)
+    @method_decorator(outer_exception_handler(logger))
+    def get(self,request:HttpRequest,*args,**kwargs):
+        data = {
+            
+        }
+
+        context = {
+            "data":data
         }
 
         return render(request,self.template_name,context)

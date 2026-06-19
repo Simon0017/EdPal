@@ -1,0 +1,346 @@
+{% extends "core/user_nav.html" %}
+{% load static %}
+
+{% block title %}Settings — EdPal{% endblock %}
+
+{% block nav_settings %}un-nav__item--active{% endblock %}
+{% block nav_settings_aria %}aria-current="page"{% endblock %}
+
+{% block breadcrumbs %}
+  <a href="{% url 'user_dashboard' %}" class="un-breadcrumbs__item">Dashboard</a>
+  <span class="un-breadcrumbs__sep">/</span>
+  <span class="un-breadcrumbs__item un-breadcrumbs__item--current">Settings</span>
+{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'accounts/css/user_settings.css' %}" />
+{% endblock %}
+
+{% block content %}
+<script>
+  window.SETTINGS_URLS = {
+    rememberMe:     "/accounts/settings/remember-me/",
+    sessions:       "/accounts/sessions/",
+    sessionDetail:  "/accounts/sessions/",
+    changePassword: "/accounts/change-password/",
+    notifications:  "/accounts/settings/notifications/",
+    logout:         "/accounts/logout/",
+    deleteAccount:  "/accounts/delete/",
+  };
+</script>
+
+<!-- Embedded server data -->
+{{ settings_data|json_script:"attempt-data" }}
+<!--
+  Fallback sample if the view does not yet provide `settings_data`.
+  Remove this script block once the backend injects real data via json_script above.
+-->
+<script id="attempt-data-fallback" type="application/json">
+{
+  "user": {
+    "id": 42,
+    "username": "jdoe",
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "john@example.com"
+  },
+  "settings": {
+    "theme": "light",
+    "sessions": [
+      {"id": "s1", "device": "Chrome on Windows", "current": true,  "expires": "2026-06-20T12:00:00Z"},
+      {"id": "s2", "device": "Firefox on Android", "current": false, "expires": "2026-06-18T08:00:00Z"}
+    ],
+    "notifications": {
+      "email": true,
+      "sms": false,
+      "push": true
+    },
+    "remember_me": true
+  }
+}
+</script>
+
+<form id="settingsCsrfForm" class="hidden">{% csrf_token %}</form>
+
+<div class="settings-page">
+
+  <h1 class="stp-page-title">Settings</h1>
+
+  <div class="stp-layout">
+
+    <!-- Sidebar -->
+    <nav class="stp-sidebar" aria-label="Settings sections">
+      <ul class="stp-tab-list" role="tablist" aria-orientation="vertical" id="stpTabList">
+        <li role="none">
+          <button class="stp-tab stp-tab--active" id="stp-tab-general" role="tab"
+                  aria-selected="true" aria-controls="stp-panel-general" data-tab="general" type="button">
+            <svg class="stp-tab__icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+            <span>General</span>
+          </button>
+        </li>
+        <li role="none">
+          <button class="stp-tab" id="stp-tab-security" role="tab"
+                  aria-selected="false" aria-controls="stp-panel-security" data-tab="security" type="button">
+            <svg class="stp-tab__icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>Security</span>
+          </button>
+        </li>
+        <li role="none">
+          <button class="stp-tab" id="stp-tab-sessions" role="tab"
+                  aria-selected="false" aria-controls="stp-panel-sessions" data-tab="sessions" type="button">
+            <svg class="stp-tab__icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <span>Sessions</span>
+          </button>
+        </li>
+        <li role="none">
+          <button class="stp-tab" id="stp-tab-notifications" role="tab"
+                  aria-selected="false" aria-controls="stp-panel-notifications" data-tab="notifications" type="button">
+            <svg class="stp-tab__icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span>Notifications</span>
+          </button>
+        </li>
+        <li role="none">
+          <button class="stp-tab stp-tab--danger" id="stp-tab-danger" role="tab"
+                  aria-selected="false" aria-controls="stp-panel-danger" data-tab="danger" type="button">
+            <svg class="stp-tab__icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>Account</span>
+          </button>
+        </li>
+      </ul>
+
+      <!-- Extra tabs registered via Settings.registerTab() render here -->
+      <ul class="stp-tab-list stp-tab-list--extra" id="stpExtraTabList" role="presentation"></ul>
+    </nav>
+
+    <!-- Main panel -->
+    <div class="stp-panels">
+
+      <!-- GENERAL -->
+      <section class="stp-panel stp-panel--active" id="stp-panel-general" role="tabpanel"
+               aria-labelledby="stp-tab-general" tabindex="0">
+        <h2 class="stp-panel__title">General</h2>
+        <p class="stp-panel__sub">Basic preferences for how EdPal looks and behaves.</p>
+
+        <div class="stp-card">
+          <div class="stp-row">
+            <div class="stp-row__text">
+              <span class="stp-row__label">Theme</span>
+              <span class="stp-row__hint">Switch between light and dark mode. Saved on this device.</span>
+            </div>
+            <div class="stp-row__control">
+              <div class="stp-theme-switch" role="radiogroup" aria-label="Theme">
+                <button class="stp-theme-btn" id="stpThemeLight" data-theme="light" type="button" role="radio" aria-checked="false">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+                  Light
+                </button>
+                <button class="stp-theme-btn" id="stpThemeDark" data-theme="dark" type="button" role="radio" aria-checked="false">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                  Dark
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="stp-row">
+            <div class="stp-row__text">
+              <span class="stp-row__label">Remember me</span>
+              <span class="stp-row__hint">Stay signed in on this browser between visits.</span>
+            </div>
+            <div class="stp-row__control">
+              <label class="stp-switch">
+                <input type="checkbox" id="stpRememberMe" aria-label="Remember me on this browser" />
+                <span class="stp-switch__track" aria-hidden="true"><span class="stp-switch__thumb"></span></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECURITY -->
+      <section class="stp-panel" id="stp-panel-security" role="tabpanel"
+               aria-labelledby="stp-tab-security" tabindex="0" hidden>
+        <h2 class="stp-panel__title">Security</h2>
+        <p class="stp-panel__sub">Change your password to keep your account secure.</p>
+
+        <div class="stp-card">
+          <!-- AJAX-enhanced; falls back to standard POST without JS -->
+          <form class="stp-form" id="stpPasswordForm" method="post" action="{% url 'user_settings' %}" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="action" value="change_password" />
+
+            <div class="form-group">
+              <label class="form-label" for="stpCurrentPassword">Current password</label>
+              <input class="form-input" type="password" id="stpCurrentPassword" name="current_password"
+                     autocomplete="current-password" required />
+              <span class="form-error" id="stpCurrentPasswordError" role="alert"></span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="stpNewPassword">New password</label>
+              <input class="form-input" type="password" id="stpNewPassword" name="new_password"
+                     autocomplete="new-password" required />
+              <span class="form-error" id="stpNewPasswordError" role="alert"></span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="stpConfirmPassword">Confirm new password</label>
+              <input class="form-input" type="password" id="stpConfirmPassword" name="confirm_password"
+                     autocomplete="new-password" required />
+              <span class="form-error" id="stpConfirmPasswordError" role="alert"></span>
+            </div>
+
+            <div class="stp-form__status" id="stpPasswordStatus" role="status" aria-live="polite"></div>
+
+            <button type="submit" class="btn-primary stp-form__submit" id="stpPasswordSubmit">
+              Update Password
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- SESSIONS -->
+      <section class="stp-panel" id="stp-panel-sessions" role="tabpanel"
+               aria-labelledby="stp-tab-sessions" tabindex="0" hidden>
+        <h2 class="stp-panel__title">Sessions</h2>
+        <p class="stp-panel__sub">Devices currently signed in to your account.</p>
+
+        <ul class="stp-session-list" id="stpSessionList" aria-live="polite"></ul>
+
+        <div class="stp-card stp-card--inline">
+          <div class="stp-row">
+            <div class="stp-row__text">
+              <span class="stp-row__label">Log out of this device</span>
+              <span class="stp-row__hint">Ends your current session immediately.</span>
+            </div>
+            <div class="stp-row__control">
+              <!-- Non-JS fallback: standard form POST -->
+              <form method="post" action="{% url 'user_settings' %}" id="stpLogoutForm">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="logout" />
+                <button type="submit" class="btn-outline" id="stpLogoutBtn">Log Out</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- NOTIFICATIONS -->
+      <section class="stp-panel" id="stp-panel-notifications" role="tabpanel"
+               aria-labelledby="stp-tab-notifications" tabindex="0" hidden>
+        <h2 class="stp-panel__title">Notifications</h2>
+        <p class="stp-panel__sub">Choose how EdPal can reach you.</p>
+
+        <div class="stp-card">
+          <div class="stp-row">
+            <div class="stp-row__text">
+              <span class="stp-row__label">Email</span>
+              <span class="stp-row__hint">Results, reminders, and account updates.</span>
+            </div>
+            <div class="stp-row__control">
+              <label class="stp-switch">
+                <input type="checkbox" id="stpNotifyEmail" aria-label="Email notifications" />
+                <span class="stp-switch__track" aria-hidden="true"><span class="stp-switch__thumb"></span></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="stp-row">
+            <div class="stp-row__text">
+              <span class="stp-row__label">SMS</span>
+              <span class="stp-row__hint">Critical alerts sent by text message.</span>
+            </div>
+            <div class="stp-row__control">
+              <label class="stp-switch">
+                <input type="checkbox" id="stpNotifySms" aria-label="SMS notifications" />
+                <span class="stp-switch__track" aria-hidden="true"><span class="stp-switch__thumb"></span></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="stp-row">
+            <div class="stp-row__text">
+              <span class="stp-row__label">Push</span>
+              <span class="stp-row__hint">Browser notifications when results are ready.</span>
+            </div>
+            <div class="stp-row__control">
+              <label class="stp-switch">
+                <input type="checkbox" id="stpNotifyPush" aria-label="Push notifications" />
+                <span class="stp-switch__track" aria-hidden="true"><span class="stp-switch__thumb"></span></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DANGER / ACCOUNT -->
+      <section class="stp-panel" id="stp-panel-danger" role="tabpanel"
+               aria-labelledby="stp-tab-danger" tabindex="0" hidden>
+        <h2 class="stp-panel__title">Account</h2>
+        <p class="stp-panel__sub">Irreversible actions. Proceed with care.</p>
+
+        <div class="stp-card stp-card--danger">
+          <div class="stp-row">
+            <div class="stp-row__text">
+              <span class="stp-row__label">Delete account</span>
+              <span class="stp-row__hint">Permanently removes your account, attempts, and results. This cannot be undone.</span>
+            </div>
+            <div class="stp-row__control">
+              <button type="button" class="btn-outline stp-delete-trigger" id="stpDeleteTrigger">
+                Delete Account
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Extra panels registered via Settings.registerTab() render here -->
+      <div id="stpExtraPanelList"></div>
+
+    </div><!-- /stp-panels -->
+  </div><!-- /stp-layout -->
+</div><!-- /settings-page -->
+
+<!-- Delete-account confirmation dialog (focus-trapped) -->
+<div class="stp-modal-backdrop hidden" id="stpDeleteBackdrop" role="dialog" aria-modal="true" aria-labelledby="stpDeleteTitle">
+  <div class="stp-modal" id="stpDeleteModal">
+    <button class="stp-modal__close" id="stpDeleteClose" aria-label="Cancel account deletion" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+
+    <h2 class="stp-modal__title" id="stpDeleteTitle">Delete your account?</h2>
+    <p class="stp-modal__body">
+      This will permanently delete your account and all associated data.
+      Type your username (<strong id="stpDeleteUsername"></strong>) to confirm.
+    </p>
+
+    <!-- Non-JS fallback: standard form POST -->
+    <form class="stp-form" id="stpDeleteForm" method="post" action="{% url 'user_settings' %}" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="action" value="delete_account" />
+
+      <div class="form-group">
+        <label class="form-label" for="stpDeleteConfirmInput">Confirm username</label>
+        <input class="form-input" type="text" id="stpDeleteConfirmInput" name="confirm_username"
+               autocomplete="off" required />
+      </div>
+
+      <div class="stp-form__status" id="stpDeleteStatus" role="status" aria-live="polite"></div>
+
+      <div class="stp-modal__actions">
+        <button type="button" class="btn-ghost" id="stpDeleteCancel">Cancel</button>
+        <button type="submit" class="btn-outline stp-modal__confirm" id="stpDeleteConfirm" disabled>
+          Permanently Delete
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Toast container for centralized error/success messages -->
+<div class="stp-toast-stack" id="stpToastStack" aria-live="polite" aria-atomic="true"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'accounts/js/user_settings.js' %}"></script>
+{% endblock %}
