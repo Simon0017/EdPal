@@ -1,0 +1,106 @@
+from __future__ import annotations
+
+import logging
+from django.utils.text import slugify
+from careers.models import Institution
+from .base_importer import BaseImporter
+from .general_utils import validate_required_columns
+
+logger = logging.getLogger(__name__)
+
+
+class InstitutionImporter(BaseImporter):
+    REQUIRED_COLUMNS = (
+        "code",
+        "name",
+        "type",
+        "website",
+        "country",
+    )
+
+    VALID_TYPES = {
+        "PUBLIC_UNIVERSITY",
+        "PRIVATE_UNIVERSITY",
+        "TECHNICAL",
+    }
+
+    def validate(self) -> None:
+        validate_required_columns(self.df, self.REQUIRED_COLUMNS)
+
+        for col in ["code", "name", "type"]:
+            if self.df[col].isna().any() or (self.df[col].astype(str).str.strip() == "").any():
+                raise ValueError(f"Column '{col}' contains empty or missing values.")
+
+        if self.df["code"].duplicated().any():
+            duplicate_codes = self.df[self.df["code"].duplicated()]["code"].unique()
+            raise ValueError(f"Duplicate institution codes found in file: {duplicate_codes}")
+        
+        if self.df["name"].duplicated().any():
+            duplicate_names = self.df[self.df["name"].duplicated()]["name"].unique()
+            raise ValueError(f"Duplicate institution names found in file: {duplicate_names}")
+
+        invalid_types = self.df[~self.df["type"].isin(self.VALID_TYPES)]["type"].unique()
+        if invalid_types.size > 0:
+            raise ValueError(f"Invalid institution types found: {invalid_types}. Must be one of {self.VALID_TYPES}")
+
+        self.df["country"] = self.df["country"].fillna("Kenya").replace("", "Kenya")
+        self.df["website"] = self.df["website"].replace("", None).where(self.df["website"].notna(), None)
+
+        logger.info("Validation passed.")
+
+    def transform(self) -> None:
+        self.records = []
+        for row in self.df.itertuples(index=False):
+            institution = Institution(
+                code=row.code,
+                name=row.name,
+                slug=slugify(row.name),
+                type=row.type,
+                website=row.website,
+                country=row.country,
+            )
+            self.records.append(institution)
+        logger.info(f"Transformed {len(self.records)} rows into model instances.")
+
+    def import_data(self) -> None:
+        codes = [record.code for record in self.records]
+        
+        existing_institutions = Institution.objects.filter(code__in=codes)
+        existing = {inst.code: inst for inst in existing_institutions}
+
+        to_create = []
+        to_update = []
+
+        for record in self.records:
+            if record.code not in existing:
+                to_create.append(record)
+            else:
+                if not self.update:
+                    self.result.skipped += 1
+                    continue
+                
+                existing_record = existing[record.code]
+                existing_record.name = record.name
+                existing_record.slug = record.slug
+                existing_record.type = record.type
+                existing_record.website = record.website
+                existing_record.country = record.country
+                to_update.append(existing_record)
+
+        if not self.dry_run:
+            if to_create:
+                Institution.objects.bulk_create(to_create, batch_size=self.batch_size)
+            if to_update:
+                Institution.objects.bulk_update(
+                    to_update,
+                    fields=["name", "slug", "type", "website", "country"],
+                    batch_size=self.batch_size,
+                )
+
+        self.result.created += len(to_create)
+        self.result.updated += len(to_update)
+
+        logger.info(
+            f"Import complete summary - Created: {len(to_create)}, "
+            f"Updated: {len(to_update)}, Skipped: {self.result.skipped}"
+        )

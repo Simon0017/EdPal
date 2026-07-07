@@ -25,7 +25,7 @@ class CareerTagInline(admin.TabularInline):
 class CourseInline(admin.TabularInline):
     model = Course
     extra = 0
-    fields = ["kuccps_code", "title", "qualification", "institution", "duration_years"]
+    fields = ["code", "title", "qualification", "institution", "duration_years"]
     show_change_link = True
     raw_id_fields = ["institution"]
 
@@ -50,9 +50,9 @@ class SubjectRequirementInline(admin.TabularInline):
 
 @admin.register(Institution)
 class InstitutionAdmin(admin.ModelAdmin):
-    list_display = ["code", "name", "type_badge", "course_count", "website_link", "slug"]
-    list_filter = ["type"]
-    search_fields = ["name", "code", "slug"]
+    list_display = ["code", "name", "type_badge", "course_count", "website_link", "country"]
+    list_filter = ["type", "country"]
+    search_fields = ["name", "code", "slug", "website", "country"]
     readonly_fields = ["slug"]
     ordering = ["name"]
 
@@ -60,7 +60,7 @@ class InstitutionAdmin(admin.ModelAdmin):
         (
             None,
             {
-                "fields": ("code", "name", "slug", "type", "website"),
+                "fields": ("code", "name", "slug", "type", "website", "country"),
             },
         ),
     )
@@ -123,7 +123,7 @@ class CareerAdmin(admin.ModelAdmin):
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
     list_display = [
-        "kuccps_code",
+        "code",
         "title",
         "qualification_badge",
         "institution",
@@ -132,7 +132,7 @@ class CourseAdmin(admin.ModelAdmin):
         "slug",
     ]
     list_filter = ["qualification", "institution__type", "duration_years"]
-    search_fields = ["title", "kuccps_code", "slug", "institution__name", "career__title"]
+    search_fields = ["title", "code", "slug", "institution__name", "career__title"]
     readonly_fields = ["slug"]
     raw_id_fields = ["career", "institution"]
     ordering = ["title"]
@@ -143,7 +143,7 @@ class CourseAdmin(admin.ModelAdmin):
             None,
             {
                 "fields": (
-                    "kuccps_code",
+                    "code",
                     "title",
                     "slug",
                     "description",
@@ -181,7 +181,7 @@ class CourseAdmin(admin.ModelAdmin):
 class CutoffClusterAdmin(admin.ModelAdmin):
     list_display = ["course", "cluster_number", "cutoff_points", "year"]
     list_filter = ["year", "cluster_number"]
-    search_fields = ["course__title", "course__kuccps_code"]
+    search_fields = ["course__title", "course__code"]
     raw_id_fields = ["course"]
     ordering = ["-year", "course", "cluster_number"]
 

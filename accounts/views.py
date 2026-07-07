@@ -7,13 +7,14 @@ from django.contrib.auth import authenticate,login
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET,require_POST
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.models import User
 from .forms import *
 from rest_framework import status
 import json
+from datetime import date
 from core.decorators import outer_exception_handler
 from core.tasks.email_tasks import send_welcome_email,send_reset_password_email
 from .services.dashboard_pop import DashboardService
@@ -42,6 +43,28 @@ def search_subjects_re(request:HttpRequest):
         "message":list(subject_q)
     })
 
+@require_POST
+@outer_exception_handler(logger)
+def upload_profile_avatar(request:HttpRequest):
+    avatar_file = request.FILES.get("avatar")
+
+    if not avatar_file:
+        return JsonResponse({
+            "success":False,
+            "message":"Avatar file missing in the request"
+        },status=status.HTTP_400_BAD_REQUEST)
+    
+    profile = request.user.profile
+    profile.avatar = avatar_file
+    profile.save()
+
+    new_avatar_url = profile.avatar.url if profile.avatar else None
+
+    return JsonResponse({
+        "success":True,
+        "message":"Avatar uploaded successfully",
+        "avatar_url":new_avatar_url
+    })
 
 '''
 CBV(s)
@@ -137,7 +160,8 @@ class UserLogin(View):
         
             return JsonResponse({
                 "success":True,
-                "messsage":"Login successful"
+                "messsage":"Login successful",
+                "role":"staff" if auth.is_staff else "user"
             },status=status.HTTP_201_CREATED)
         
         else:
@@ -198,6 +222,12 @@ class ResetPassword(View):
         uid = kwargs.get("uid")
         token = kwargs.get("token")
         new_password = request.POST.get("new_password")
+
+        if new_password is None:
+            return JsonResponse({
+                "success":False,
+                "message":"New password missing in the request"
+            },status=status.HTTP_400_BAD_REQUEST)
 
         if not uid or not token:
             return JsonResponse({
@@ -288,7 +318,7 @@ class UserProfile(View):
                 "date_of_birth": request.user.profile.date_of_birth.strftime("%Y-%m-%d"),
                 "about_me": request.user.profile.about_me,
                 "avatar_url": request.user.profile.avatar.url if request.user.profile.avatar else None,
-                "subjects": list(request.user.profile.subjects.values_list("name",flat=True))
+                "subjects": list(request.user.profile.subjects.values("id", "name"))
             }
         }
 
@@ -300,8 +330,53 @@ class UserProfile(View):
     
     @method_decorator(login_required)
     @method_decorator(outer_exception_handler(logger))
-    def post(self,request:HttpRequest,*args,**kwargs):
-        pass
+    def put(self,request:HttpRequest,*args,**kwargs):
+        data:dict = json.loads(request.body.decode())
+
+        first_name = data.get("first_name")
+        last_name = data.get("last_name")
+        email = data.get("email")
+        date_of_birth = data.get("date_of_birth")
+        about_me = data.get("about_me")
+        subject_ids = [sid for sid in data.get("subject_ids", []) if sid is not None]
+
+        user = request.user
+        profile = request.user.profile
+        
+        user.first_name = first_name if first_name else user.first_name
+        user.last_name = last_name if last_name else user.last_name
+        user.email = email if email else user.email
+
+        if date_of_birth:
+            profile.date_of_birth = date.fromisoformat(date_of_birth)
+
+        profile.about_me = about_me if about_me else profile.about_me
+        
+        new_ids = set(subject_ids)
+        current_ids = set(
+            ProfileSubject.objects.filter(profile=profile)
+            .values_list("subject_id", flat=True)
+        )
+
+        # Remove subjects that were unselected
+        ProfileSubject.objects.filter(
+            profile=profile,
+            subject_id__in=current_ids - new_ids
+        ).delete()
+
+        # Add newly selected subjects
+        ProfileSubject.objects.bulk_create([
+            ProfileSubject(profile=profile, subject_id=sid)
+            for sid in new_ids - current_ids
+        ])
+
+        user.save()
+        profile.save()
+
+        return JsonResponse({
+            "success":True,
+            "message":"Profile updated successfully"
+        },status=status.HTTP_200_OK)
 
 
 class UserSettings(View):

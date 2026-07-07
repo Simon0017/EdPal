@@ -84,7 +84,7 @@
         <!-- Date of birth -->
         <div class="form-group">
           <label class="form-label" for="id_date_of_birth">Date of birth</label>
-          <input class="form-input profile-input" type="date" id="id_date_of_birth" name="date_of_birth" disabled>
+          <input class="form-input profile-input" type="date" id="id_date_of_birth" name="date_of_birth">
         </div>
 
         <!-- Subjects -->
@@ -124,6 +124,11 @@
 
   </div><!-- /.profile-card -->
 </div>
+
+<script>
+  window.SEARCH_SUBJECTS_URL = "{% url 'search_subjects' %}";
+  window.UPLOAD_AVATAR_URL  = "{% url 'upload_profile_avatar' %}";
+</script>
 
 <!-- Quill JS -->
 <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>

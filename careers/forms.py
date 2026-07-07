@@ -21,7 +21,7 @@ class InstitutionForm(forms.ModelForm):
 
     class Meta:
         model = Institution
-        fields = ["code", "name", "type", "website"]
+        fields = ["code", "name", "type", "website", "country"]
 
     def clean_code(self):
         code = self.cleaned_data.get("code", "").strip().upper()
@@ -29,7 +29,7 @@ class InstitutionForm(forms.ModelForm):
         if self.instance.pk:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise ValidationError("An institution with this KUCCPS code already exists.")
+            raise ValidationError("An institution with this code already exists.")
         return code
 
     def clean_website(self):
@@ -95,14 +95,14 @@ class CareerTagForm(forms.ModelForm):
 
 class CourseForm(forms.ModelForm):
     """
-    Create / update a KUCCPS course.
+    Create / update a course.
     slug is auto-managed by model.save().
     """
 
     class Meta:
         model = Course
         fields = [
-            "kuccps_code",
+            "code",
             "title",
             "description",
             "qualification",
@@ -114,13 +114,13 @@ class CourseForm(forms.ModelForm):
             "description": forms.Textarea(attrs={"rows": 4}),
         }
 
-    def clean_kuccps_code(self):
-        code = self.cleaned_data.get("kuccps_code", "").strip().upper()
-        qs = Course.objects.filter(kuccps_code=code)
+    def clean_code(self):
+        code = self.cleaned_data.get("code", "").strip().upper()
+        qs = Course.objects.filter(code=code)
         if self.instance.pk:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise ValidationError("A course with this KUCCPS code already exists.")
+            raise ValidationError("A course with this code already exists.")
         return code
 
     def clean_duration_years(self):
@@ -145,15 +145,14 @@ class CutoffClusterForm(forms.ModelForm):
 
     def clean_cluster_number(self):
         value = self.cleaned_data.get("cluster_number")
-        if value is not None and not (1 <= value <= 4):
-            raise ValidationError("Cluster number must be between 1 and 4 (KUCCPS clusters).")
+        if value is None:
+            raise ValidationError("Cluster number is required.")
         return value
 
     def clean_cutoff_points(self):
         value = self.cleaned_data.get("cutoff_points")
-        if value is not None and not (0 <= value <= 84):
-            # KUCCPS maximum is 84 points (A in 7 subjects × 12 pts each)
-            raise ValidationError("Cutoff points must be between 0 and 84.")
+        if value is None:
+            raise ValidationError("Cutoff points are required.")
         return value
 
     def clean_year(self):
@@ -213,7 +212,8 @@ class SubjectRequirementForm(forms.ModelForm):
     prevents duplicate subject entries per course.
     """
 
-    VALID_GRADES = ["A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "E"]
+    # TODO consider adding more robust grade validation (e.g. using a mapping of grades to numeric values)
+    VALID_GRADES = ["A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "E"] 
 
     class Meta:
         model = SubjectRequirement

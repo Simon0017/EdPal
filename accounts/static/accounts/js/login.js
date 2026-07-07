@@ -187,11 +187,22 @@ async function handleLoginSubmit (e) {
       // ── SUCCESS ──
       showStatus('Login successful! Redirecting…', 'success');
       btn.disabled = true;
+      
+      let data = await response.json();
+      var role = data.role || 'user';
+      localStorage.setItem('edpal-user_role', role);
 
-      setTimeout(() => {
-        window.location.href = window.DASHBOARD_URL;
-      }, 1200);
-
+      // TODO ADD STAFF URL REDIRECT
+      if (role === 'staff') {
+        setTimeout(() => {
+          window.location.href = window.DASHBOARD_URL;
+        }, 1200);
+      }else {
+        setTimeout(() => {
+          window.location.href = window.DASHBOARD_URL;
+        }, 1200);
+      }
+      
     } else if (response.status === 400 || response.status === 401 || response.status === 403) {
       // ── CREDENTIAL / VALIDATION ERROR ──
       let data = {};

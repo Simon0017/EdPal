@@ -185,14 +185,15 @@ async function handleSubmit (e) {
   const submitBtn = document.getElementById('rp-submit');
   const inputs    = form.querySelectorAll('input');
 
+  const formData = new FormData(form);
+
   // Loading state — disable inputs, show spinner
   submitBtn.classList.add('loading');
   submitBtn.disabled = true;
   inputs.forEach(i => i.disabled = true);
 
-  const formData = new FormData(form);
   const csrf     = getCsrfToken();
-
+  
   try {
     // POST to the current URL — uid/token are already in the path.
     const response = await fetch(window.location.href, {

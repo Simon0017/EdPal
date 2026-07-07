@@ -88,7 +88,7 @@ function setEditing (editing) {
   isEditing = editing;
 
   [els.firstName, els.lastName, els.email].forEach(i => i.disabled = !editing);
-    els.dob.readOnly = !editing; // readOnly keeps the native date picker icon visible/functional
+  els.dob.readOnly = !editing; // readOnly keeps the native date picker icon visible/functional
 
   els.btnEdit.classList.toggle('hidden', editing);
   els.btnSave.classList.toggle('hidden', !editing);
@@ -149,10 +149,10 @@ const doSubjectSearch = debounce(async (query) => {
     return;
   }
   try {
-    const res = await fetch(`/accounts/search-subjects/?query=${encodeURIComponent(query)}`);
+    const res = await fetch(`${window.SEARCH_SUBJECTS_URL}?query=${encodeURIComponent(query)}`);
     if (!res.ok) throw new Error('Search failed');
     const results = await res.json();
-    renderDropdown(results);
+    renderDropdown(results.message || []);
   } catch (err) {
     renderDropdown([]);
   }
@@ -227,7 +227,7 @@ async function uploadAvatar (file) {
   formData.append('avatar', file);
 
   try {
-    const res = await fetch('/accounts/profile/avatar/', {
+    const res = await fetch(window.UPLOAD_AVATAR_URL, {
       method: 'POST',
       headers: { 'X-CSRFToken': CSRF_TOKEN },
       body: formData,
@@ -335,9 +335,10 @@ async function saveProfile () {
   els.btnSave.disabled = true;
   els.btnSave.textContent = 'Saving…';
 
+  
   try {
-    const res = await fetch('/accounts/profile/update/', {
-      method: 'POST',
+    const res = await fetch(window.location.pathname, {
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRFToken': CSRF_TOKEN,

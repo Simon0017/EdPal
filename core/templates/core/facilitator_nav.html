@@ -17,7 +17,7 @@
   <!-- Shared tokens + buttons + inputs -->
   <link rel="stylesheet" href="{% static 'accounts/css/registration.css' %}" />
   <!-- Sidebar layout -->
-  <link rel="stylesheet" href="{% static 'core/css/staff_nav.css' %}" />
+  <link rel="stylesheet" href="{% static 'core/css/facilitator_nav.css' %}" />
 
   <!-- Fontawseone icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -70,7 +70,8 @@
           <li>
             <a
               href="{% url 'questionnare_list' %}"
-              class="sn-nav__item"
+              class="sn-nav__item  {% block nav_questionnaires_manage %}{% endblock %}"
+              {% block nav_questionnaires_manage_aria %}{% endblock %}
             >
               <span class="sn-nav__icon" aria-hidden="true"><i class="fa fa-question-circle" aria-hidden="true"></i></span>
               <span>Manage Questionnares</span>

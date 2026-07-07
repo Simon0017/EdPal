@@ -124,7 +124,7 @@ html:not(.theme-dark) .profile-card {
 .profile-input:disabled {
   opacity: 0.85;
   cursor: default;
-  background: var(--color-background);
+  /* background: var(--color-background); */
   color: var(--text, var(--color-foreground));
 }
 
@@ -215,7 +215,7 @@ input[type="date"].profile-input:disabled {
 
 /* ══ QUILL EDITOR ══ */
 .profile-quill {
-  background: var(--color-background);
+  /* background: var(--color-background); */
   border: 1px solid var(--border, var(--color-border));
   border-radius: var(--radius-md, 0.5rem);
   min-height: 140px;

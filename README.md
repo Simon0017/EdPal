@@ -25,6 +25,7 @@
 | assessment| Questionnaires (versioned), Questions, AnswerChoices, question banks,QuestionResponse, QuestionnaireAttempt — the write-hot tables,ScoringRule, AttemptScore  |
 | careers | Career, Course, Institution, SubjectRequirement, CutoffCluster *Follows KUCCPS model* |
 | accounts |  Custom User model, UserProfile, subject enrollment, career preferences with ranking |
+| analytics |  Tracks and analyzes user activities in the site |
 
 
 ## Technology Stack

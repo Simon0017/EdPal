@@ -1,0 +1,143 @@
+# career_importer.py
+
+from __future__ import annotations
+
+import logging
+from django.utils.text import slugify
+from django.db import transaction
+from careers.models import Career, CareerTag
+from core.models import Tag
+from .base_importer import BaseImporter
+from .general_utils import validate_required_columns
+
+logger = logging.getLogger(__name__)
+
+
+class CareerImporter(BaseImporter):
+    REQUIRED_COLUMNS = (
+        "code",
+        "title",
+        "sector",
+        "description",
+        "tags",
+    )
+
+    def validate(self) -> None:
+        validate_required_columns(self.df, self.REQUIRED_COLUMNS)
+
+        for col in ["code", "title", "sector"]:
+            if self.df[col].isna().any() or (self.df[col].astype(str).str.strip() == "").any():
+                raise ValueError(f"Column '{col}' contains empty or missing values.")
+
+        if self.df["code"].duplicated().any():
+            duplicate_codes = self.df[self.df["code"].duplicated()]["code"].unique()
+            raise ValueError(f"Duplicate career codes found in file: {duplicate_codes}")
+
+        if self.df["title"].duplicated().any():
+            duplicate_names = self.df[self.df["title"].duplicated()]["title"].unique()
+            raise ValueError(f"Duplicate career titles found in file: {duplicate_names}")
+
+        self.df["description"] = self.df["description"].fillna("").astype(str).str.strip()
+        self.df["tags"] = self.df["tags"].fillna("").astype(str).str.strip()
+
+        logger.info("Validation passed.")
+
+    def transform(self) -> None:
+        self.records = []
+        # Store a mapping of row code to raw tags string for the import_data phase
+        self.row_tags_map = {}
+
+        for row in self.df.itertuples(index=False):
+            career = Career(
+                code=row.code,
+                title=row.title,
+                slug=slugify(row.title),
+                sector=row.sector,
+                description=row.description,
+            )
+            self.records.append(career)
+            self.row_tags_map[row.code] = row.tags
+            
+        logger.info(f"Transformed {len(self.records)} rows into Career model instances.")
+
+    def import_data(self) -> None:
+        codes = [record.code for record in self.records]
+
+        existing_careers = Career.objects.filter(code__in=codes)
+        existing = {career.code: career for career in existing_careers}
+
+        to_create = []
+        to_update = []
+
+        for record in self.records:
+            if record.code not in existing:
+                to_create.append(record)
+            else:
+                if not self.update:
+                    self.result.skipped += 1
+                    continue
+
+                existing_record = existing[record.code]
+                existing_record.title = record.title
+                existing_record.slug = record.slug
+                existing_record.sector = record.sector
+                existing_record.description = record.description
+                to_update.append(existing_record)
+
+        if not self.dry_run:
+            with transaction.atomic():
+                # 1. Save Parent Careers
+                if to_create:
+                    Career.objects.bulk_create(to_create, batch_size=self.batch_size)
+                if to_update:
+                    Career.objects.bulk_update(
+                        to_update,
+                        fields=["title", "slug", "sector", "description"],
+                        batch_size=self.batch_size,
+                    )
+
+                # Re-query all affected careers from DB to ensure we have valid IDs for relation mapping
+                db_careers = {c.code: c for c in Career.objects.filter(code__in=codes)}
+
+                # 2. Extract and resolve Tags via exact __in query
+                all_tag_codes = set()
+                for tags_str in self.row_tags_map.values():
+                    if tags_str:
+                        all_tag_codes.update([t.strip() for t in tags_str.split(",") if t.strip()])
+
+                db_tags = {tag.code: tag for tag in Tag.objects.filter(code__in=all_tag_codes)}
+
+                # 3. Build CareerTag through-model instances
+                career_tags_to_create = []
+                careers_to_clear_tags = []
+
+                for code, record in db_careers.items():
+                    tags_str = self.row_tags_map.get(code, "")
+                    if not tags_str:
+                        continue
+
+                    careers_to_clear_tags.append(record.id)
+                    
+                    for tag_code in [t.strip() for t in tags_str.split(",") if t.strip()]:
+                        tag_obj = db_tags.get(tag_code)
+                        if tag_obj:
+                            career_tags_to_create.append(
+                                CareerTag(career=record, tag=tag_obj, recommendation_weight=1.0)
+                            )
+                        else:
+                            logger.warning(f"Tag with code '{tag_code}' not found in database. Skipping association.")
+
+                # 4. Update the relations table safely
+                if careers_to_clear_tags:
+                    CareerTag.objects.filter(career_id__in=careers_to_clear_tags).delete()
+                
+                if career_tags_to_create:
+                    CareerTag.objects.bulk_create(career_tags_to_create, batch_size=self.batch_size)
+
+        self.result.created += len(to_create)
+        self.result.updated += len(to_update)
+
+        logger.info(
+            f"Import complete summary - Created: {len(to_create)}, "
+            f"Updated: {len(to_update)}, Skipped: {self.result.skipped}"
+        )

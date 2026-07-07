@@ -2,7 +2,7 @@ from django.db import models
 from django.utils.text import slugify
 
 class Institution(models.Model):
-    code    = models.CharField(max_length=20, unique=True)  # KUCCPS code
+    code    = models.CharField(max_length=20, unique=True)
     name    = models.CharField(max_length=255, db_index=True)
     slug    = models.SlugField(max_length=255, unique=True)
     type    = models.CharField(
@@ -13,6 +13,7 @@ class Institution(models.Model):
         db_index=True
     )
     website = models.URLField(blank=True,null=True)
+    country = models.CharField(max_length=100, default="Kenya", db_index=True)
 
     class Meta:
         db_table = "careers_institution"
@@ -83,10 +84,10 @@ class CareerTag(models.Model):
 
 class Course(models.Model):
     """
-    KUCCPS degree/diploma programme.
+    Degree/diploma programme.
     Linked to a career, offered by an institution.
     """
-    kuccps_code    = models.CharField(max_length=20, unique=True)
+    code    = models.CharField(max_length=20, unique=True)
     title          = models.CharField(max_length=255, db_index=True)
     slug           = models.SlugField(max_length=255, unique=True)
     description    = models.TextField(blank=True)
@@ -118,11 +119,11 @@ class Course(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Course: {self.title.title()} : {self.kuccps_code}"
+        return f"Course: {self.title.title()} : {self.code}"
 
 class CutoffCluster(models.Model):
     """
-    KUCCPS cutoff points vary by cluster (subject combination) and year.
+    cutoff points vary by cluster (subject combination) and year.
     Separate rows per year allows trend analysis.
     """
     course         = models.ForeignKey(
