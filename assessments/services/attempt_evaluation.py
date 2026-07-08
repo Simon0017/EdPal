@@ -1,30 +1,131 @@
+from __future__ import annotations
 
 from django.http import HttpRequest
+from django.db import transaction, IntegrityError
+from django.db.models import Prefetch, Max
 import json
-from django.db.models import Prefetch,Max
 import logging
-from typing import Any
-import math
+from typing import Any, Optional
+
 from .feedback_classifier import Feedback
 
 logger = logging.getLogger(__name__)
 
-
 from ..models import *
-from ..forms import QuestionResponseForm,AttemptScoreForm
+from ..forms import QuestionResponseForm, AttemptScoreForm
+
+
+# Defensive caps
+MAX_ANSWERS_PER_ATTEMPT = 500
+MAX_ATTEMPT_NUMBER_RETRIES = 3
+
+
+class EvaluationError(Exception):
+    """
+    Raised for anything that should stop evaluation, with a machine-readable
+    `code` so the calling view can map it to the right HTTP status instead
+    of parsing message strings.
+
+    codes: invalid_payload | unauthenticated | not_found | conflict | server_error
+    """
+    def __init__(self, message: str, code: str = "server_error"):
+        super().__init__(message)
+        self.message = message
+        self.code = code
+
 
 class AttemptEvaluationService:
-    def __init__(self,request:HttpRequest):
-        self.request = request
-        self.body_data:dict[str,Any] = json.loads(request.body.decode())
-        self.questinnare_id:int = self.body_data.get('questionnaire_id')
-        self.answers:list[dict] = self.body_data.get('answers')
-        self.send_email:bool = self.body_data.get('send_email')
-        self.questionnaire = None
-        self.attempt_id = None
-        self.attempt_instance = None
+    """
+    Evaluates a submitted questionnaire attempt and persists the resulting
+    QuestionnaireAttempt / QuestionResponse / AttemptScore rows.
 
-    def setup(self):
+    Usage:
+        service = AttemptEvaluationService(request)
+        try:
+            result = service.evaluate()
+        except EvaluationError as e:
+            return JsonResponse({"error": e.message}, status=map_code(e.code))
+    """
+
+    def __init__(self, request: HttpRequest):
+        self.request = request
+        self.body_data: dict[str, Any] = {}
+        self.parse_error: Optional[str] = None
+
+        try:
+            raw = request.body.decode()
+            parsed = json.loads(raw) if raw else {}
+            if not isinstance(parsed, dict):
+                self.parse_error = "Request body must be a JSON object."
+            else:
+                self.body_data = parsed
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            logger.warning("Failed to parse request body as JSON: %s", e)
+            self.parse_error = "Request body is not valid JSON."
+
+        self.questinnare_id = self.body_data.get('questionnaire_id')
+        self.answers = self.body_data.get('answers')
+        self.send_email: bool = bool(self.body_data.get('send_email', False))
+        self.started_at = self.body_data.get('started_at')
+        self.completed_at = self.body_data.get('completed_at')
+
+        self.questionnaire: Optional["Questionnaire"] = None
+        self.attempt_id: Optional[int] = None
+        self.attempt_instance: Optional["QuestionnaireAttempt"] = None
+        self._question_lookup: dict[int, "Question"] = {}
+
+        # Guards against evaluate()/build_response accidentally being called
+        # twice and creating a second attempt as a side effect.
+        self._evaluated = False
+        self._cached_response: dict[str, Any] = {}
+
+    # ------------------------------------------------------------------
+    # Validation
+    # ------------------------------------------------------------------
+    def validate(self) -> None:
+        """Cheap, pre-DB sanity checks. Raises EvaluationError on failure."""
+        if self.parse_error:
+            raise EvaluationError(self.parse_error, code="invalid_payload")
+
+        user = getattr(self.request, "user", None)
+        if user is None or not getattr(user, "is_authenticated", False):
+            raise EvaluationError("Authentication is required.", code="unauthenticated")
+
+        try:
+            profile = user.profile
+        except Exception:
+            profile = None
+        if profile is None:
+            raise EvaluationError("No profile associated with this user.", code="unauthenticated")
+
+        if self.questinnare_id is None:
+            raise EvaluationError("questionnaire_id is required.", code="invalid_payload")
+        try:
+            self.questinnare_id = int(self.questinnare_id)
+        except (TypeError, ValueError):
+            raise EvaluationError("questionnaire_id must be an integer.", code="invalid_payload")
+
+        if self.answers is None:
+            raise EvaluationError("answers is required.", code="invalid_payload")
+        if not isinstance(self.answers, list):
+            raise EvaluationError("answers must be a list.", code="invalid_payload")
+        if len(self.answers) == 0:
+            raise EvaluationError("answers cannot be empty.", code="invalid_payload")
+        if len(self.answers) > MAX_ANSWERS_PER_ATTEMPT:
+            raise EvaluationError(
+                f"Too many answers submitted (max {MAX_ANSWERS_PER_ATTEMPT}).",
+                code="invalid_payload",
+            )
+        for i, answer in enumerate(self.answers):
+            if not isinstance(answer, dict):
+                raise EvaluationError(f"answers[{i}] must be an object.", code="invalid_payload")
+            if "question_id" not in answer:
+                raise EvaluationError(f"answers[{i}] is missing question_id.", code="invalid_payload")
+
+    # ------------------------------------------------------------------
+    # Setup
+    # ------------------------------------------------------------------
+    def setup(self) -> None:
         prefetch_questions = Prefetch(
             "questions",
             queryset=Question.objects.prefetch_related("answer_choices")
@@ -32,207 +133,342 @@ class AttemptEvaluationService:
 
         self.questionnaire = (
             Questionnaire.objects
-            .filter(id=int(self.questinnare_id))
+            .filter(id=self.questinnare_id)
             .prefetch_related(prefetch_questions)
             .first()
         )
-    
+
+        if self.questionnaire is None:
+            raise EvaluationError("Questionnaire not found.", code="not_found")
+
+        if self.questionnaire.max_score is None or float(self.questionnaire.max_score) <= 0:
+            raise EvaluationError(
+                "Questionnaire is misconfigured (max_score must be greater than zero).",
+                code="server_error",
+            )
+
+        # In-memory lookup so per-answer scoring never re-queries the DB for
+        # something already prefetched (previously: a query per answer, plus
+        # a broken existence check via `question.exists` — a bound method
+        # reference, always truthy — instead of `question.exists()`).
+        self._question_lookup = {q.id: q for q in self.questionnaire.questions.all()}
+
     def save_response(self):
         pass
 
+    # ------------------------------------------------------------------
+    # Core scoring
+    # ------------------------------------------------------------------
     def handle_answers(self) -> float:
-        try:
-            # create an attempt
-            # select the latest attempt and increase it
-            latest_attempt_number = QuestionnaireAttempt.objects.filter(
-                                        profile=self.request.user.profile,
-                                        questionnaire_id=self.questinnare_id
-                                    ).aggregate(max_attempt=Max("attempt_number"))["max_attempt"]
-            
-            latest_attempt_number = latest_attempt_number or 0
-            new_attempt_number = latest_attempt_number + 1
-            self.attempt_id = new_attempt_number
-            
-            attempt_instance = QuestionnaireAttempt(
-                profile=self.request.user.profile, # include a fail safe for unauthenticated
-                questionnaire_id=int(self.questinnare_id),
-                status="COMPLETED",
-                attempt_number=new_attempt_number
-            )
+        """
+        Creates the attempt and scores every answer. The attempt_number
+        allocation is retried on IntegrityError (optimistic concurrency) in
+        case two requests race for the same profile+questionnaire. A single
+        malformed answer is skipped and logged rather than aborting the
+        whole submission and losing an already-created attempt.
+        """
+        profile = self.request.user.profile
 
-            attempt_instance.save()
-            self.attempt_instance = attempt_instance
+        for retry in range(MAX_ATTEMPT_NUMBER_RETRIES):
+            try:
+                with transaction.atomic():
+                    latest_attempt_number = QuestionnaireAttempt.objects.filter(
+                        profile=profile,
+                        questionnaire_id=self.questinnare_id
+                    ).aggregate(max_attempt=Max("attempt_number"))["max_attempt"]
 
-            points_awarded:float = 0.0
+                    new_attempt_number = (latest_attempt_number or 0) + 1
 
-            for answer in self.answers:  #OPTIMIZE THIS SO THAT TIME COMPLEXITY IS NOT AN ISSUE
-                question_id:int = answer.get("question_id")
-                answer_value:Any = answer.get("answer_value")
+                    attempt_instance = QuestionnaireAttempt(
+                        profile=profile,
+                        questionnaire_id=self.questinnare_id,
+                        status="COMPLETED",
+                        attempt_number=new_attempt_number,
+                        started_at = self.started_at,
+                        completed_at = self.completed_at
+                    )
+                    attempt_instance.save()
 
-                question = self.questionnaire.questions.filter(id=question_id)
-                if not question.exists:
-                    logger.warning(f"Question corresponding to id {question_id} does not exixt, Skipping...")
+                    self.attempt_id = new_attempt_number
+                    self.attempt_instance = attempt_instance
+
+                    return self._score_all_answers(attempt_instance)
+
+            except IntegrityError as e:
+                logger.warning(
+                    "Attempt-number collision for profile=%s questionnaire=%s (retry %s): %s",
+                    getattr(profile, "id", None), self.questinnare_id, retry, e
+                )
+                if retry == MAX_ATTEMPT_NUMBER_RETRIES - 1:
+                    logger.exception("Exhausted retries creating attempt")
+                    raise EvaluationError(
+                        "Could not record this attempt due to a conflicting request. Please try again.",
+                        code="conflict",
+                    )
+                continue
+
+        # Unreachable, but keeps type-checkers happy.
+        return 0.0
+
+    def _score_all_answers(self, attempt_instance: "QuestionnaireAttempt") -> float:
+        total_points = 0.0
+
+        for answer in self.answers:
+            try:
+                question_id = answer.get("question_id")
+                answer_value = answer.get("answer_value")
+
+                try:
+                    question_id = int(question_id)
+                except (TypeError, ValueError):
+                    logger.warning("Non-integer question_id %r, skipping.", question_id)
                     continue
-                question = question.first()
-                
+
+                question = self._question_lookup.get(question_id)
+                if question is None:
+                    logger.warning(
+                        "Question id %s does not belong to questionnaire %s, skipping.",
+                        question_id, self.questinnare_id
+                    )
+                    continue
+
                 data = {
                     "question": question,
                     "answer_value": json.dumps(answer_value),
-                    "attempt":attempt_instance
+                    "attempt": attempt_instance,
                 }
 
                 question_response_form = QuestionResponseForm(data=data)
-
                 if not question_response_form.is_valid():
-                    logger.warning(f"Invalid answer value {answer_value} for question id {question_id}, Errors: {question_response_form.errors}, Skipping...")
+                    logger.warning(
+                        "Invalid answer for question id %s, errors: %s, skipping.",
+                        question_id, question_response_form.errors
+                    )
                     continue
-                
-                response:QuestionResponse = question_response_form.save(commit=False)
-                
-                answer_points:float = self.evaluate_question_answer(question,answer_value,response)
-                points_awarded += float(answer_points)
 
-            return points_awarded
-            
-        except Exception as e:
-            logger.error(str(e))
+                response: QuestionResponse = question_response_form.save(commit=False)
+
+                try:
+                    answer_points = self.evaluate_question_answer(question, answer_value, response)
+                    answer_points = float(answer_points) if answer_points is not None else 0.0
+                except (TypeError, ValueError) as e:
+                    logger.warning(
+                        "Could not coerce score for question id %s: %s, awarding 0 points.",
+                        question_id, e
+                    )
+                    answer_points = 0.0
+
+                total_points += answer_points
+
+            except Exception as e:
+                # Defense in depth: one bad answer must never take down the
+                # whole submission (previously, any exception here — e.g. a
+                # None returned from a scoring handler — bubbled up and
+                # caused the *entire* attempt to silently score as 0,
+                # despite an attempt row already having been created).
+                logger.exception("Unexpected error scoring one answer, skipping it: %s", e)
+                continue
+
+        return total_points
+
+    # ------------------------------------------------------------------
+    # Per-question-type scoring
+    # ------------------------------------------------------------------
+    def evaluate_question_answer(self, question: "Question", answer_value: Any, response: "QuestionResponse") -> float:
+        handlers = {
+            "MCQ": self.handle_mcq,
+            "MULTI": self.handle_multi,
+            "TEXT": self.handle_text,
+            "NUMERIC": self.handle_numeric,
+            "LIKERT": self.handle_likert,
+            "RANKING": self.handle_ranking,
+        }
+        handler = handlers.get(question.question_type)
+        if handler is None:
+            logger.warning("Unknown question_type %s for question %s", question.question_type, question.id)
             return 0.0
+        return handler(question, answer_value, response)
 
-
-    def evaluate_question_answer(self,question:Question,answer_value:Any,response:QuestionResponse) -> float:
-        match question.question_type:
-            case "MCQ":
-                return self.handle_mcq(question,answer_value,response)
-            case "MULTI":
-                return self.handle_multi(question,answer_value,response)
-            case "TEXT":
-                return self.handle_text(question,answer_value,response)
-            case "NUMERIC":
-                return self.handle_numeric(question,answer_value,response)
-            case "LIKERT":
-                return self.handle_likert(question,answer_value,response)
-            case "RANKING":
-                return self.handle_ranking(question,answer_value,response)
-            case _:
-                return 0.0
-    
-    def handle_mcq(self,question:Question,answer_value:Any,response:QuestionResponse) -> float:
-        '''Multiple Choice (single answer)'''
+    def handle_mcq(self, question: "Question", answer_value: Any, response: "QuestionResponse") -> float:
+        """Multiple Choice (single answer)."""
         try:
-            choices = question.answer_choices.all()
-            correct_choice = choices.filter(is_correct=True)
-            correct = correct_choice.first()
+            # Read from the already-prefetched manager and filter in Python
+            # rather than re-querying, and rather than relying on `.first()`
+            # silently picking an arbitrary row if the data is misconfigured.
+            choices = list(question.answer_choices.all())
+            correct_choices = [c for c in choices if c.is_correct]
 
-            if not correct:
-                logger.error("No correct choice found for question %s", question.id)
-                return
-            
-            max_points = question.max_points
-            points_awarded = 0.0
-
-            if str(answer_value).lower() == str(correct.choice_key).lower():
-                response.is_correct = True
-                points_awarded = max_points
-                response.points_awarded = points_awarded
-            else:
+            if not correct_choices:
+                logger.error("No correct choice configured for question %s", question.id)
                 response.is_correct = False
+                response.points_awarded = 0.0
+                response.save()
+                return 0.0
 
+            if len(correct_choices) > 1:
+                logger.warning(
+                    "Question %s has %d correct choices configured for an MCQ; using the first.",
+                    question.id, len(correct_choices)
+                )
+
+            correct = correct_choices[0]
+            max_points = float(question.max_points or 0)
+
+            is_correct = str(answer_value).strip().lower() == str(correct.choice_key).strip().lower()
+            response.is_correct = is_correct
+            response.points_awarded = max_points if is_correct else 0.0
             response.save()
 
-            return points_awarded
+            return response.points_awarded
 
         except Exception as e:
-            logger.error(str(e))
+            # Bug fix: this branch previously used a bare `return` (i.e.
+            # returns None), which crashed the caller's `float(answer_points)`
+            # and aborted the entire attempt via the outer try/except.
+            logger.exception("Error scoring MCQ question %s: %s", question.id, e)
             return 0.0
 
-    def handle_multi(self,question:Question,answer_value:list,response:QuestionResponse) -> float:
+    def handle_multi(self, question: "Question", answer_value: Any, response: "QuestionResponse") -> float:
+        """Multiple Select (partial credit by overlap with correct choices)."""
         try:
-            if not isinstance(answer_value,list):
-                return
-            
-            correct_choices = question.answer_choices.filter(is_correct=True).values_list("choice_key", flat=True)
-            max_points = question.max_points
+            if not isinstance(answer_value, list) or len(answer_value) == 0:
+                response.is_correct = False
+                response.points_awarded = 0.0
+                response.save()
+                return 0.0
 
-            correct_choices_lower = set(map(str.lower,correct_choices))
-            answer_value_lower = set(map(str.lower,answer_value))
+            choices = list(question.answer_choices.all())
+            correct_choices = [c.choice_key for c in choices if c.is_correct]
+            max_points = float(question.max_points or 0)
 
-            intersection_answers = set(answer_value_lower & correct_choices_lower)
+            if not correct_choices:
+                logger.error("No correct choices configured for MULTI question %s", question.id)
+                response.is_correct = False
+                response.points_awarded = 0.0
+                response.save()
+                return 0.0
 
-            # precision_penalty = len(answer_value_lower) / len(correct_choices_lower | answer_value_lower)
-            ratio = (len(intersection_answers)/len(correct_choices_lower)) if len(correct_choices_lower) > 0 else 0
-            # ratio = ratio * precision_penalty
-            
-            point_awarded = float(max_points) * ratio
+            # str() every element defensively — an answer list containing
+            # non-string values (numbers, None) previously raised
+            # AttributeError out of `str.lower`, again killing the whole
+            # attempt via the outer try/except.
+            correct_lower = {str(c).strip().lower() for c in correct_choices}
+            answer_lower = {str(a).strip().lower() for a in answer_value}
 
-            response.points_awarded = point_awarded
+            intersection = correct_lower & answer_lower
+            ratio = len(intersection) / len(correct_lower)
+
+            points_awarded = max_points * ratio
+
+            response.points_awarded = points_awarded
             response.is_correct = ratio == 1
             response.save()
 
-            return point_awarded
+            return points_awarded
+
         except Exception as e:
-            logger.error(str(e))
+            # Bug fix: same bare-`return`-None issue as handle_mcq.
+            logger.exception("Error scoring MULTI question %s: %s", question.id, e)
             return 0.0
 
-    def handle_numeric(self,question:Question,answer_value:Any,response:QuestionResponse)-> float:
+    def handle_numeric(self, question, answer_value, response) -> float:
         return 0.0
 
-    def handle_text(self,question:Question,answer_value:Any,response:QuestionResponse)-> float:
+    def handle_text(self, question, answer_value, response) -> float:
         return 0.0
 
-    def handle_likert(self,question:Question,answer_value:Any,response:QuestionResponse)-> float:
+    def handle_likert(self, question, answer_value, response) -> float:
         return 0.0
 
-    def handle_ranking(self,question:Question,answer_value:Any,response:QuestionResponse)-> float:
+    def handle_ranking(self, question, answer_value, response) -> float:
         return 0.0
-    
-    @property
-    def build_response(self) ->dict[str,Any]:
-        """Builds a report dictionary
 
-        Returns:
-            dict[str,Any]: report dictionary
+    # ------------------------------------------------------------------
+    # Response building
+    # ------------------------------------------------------------------
+    def evaluate(self) -> dict[str, Any]:
         """
+        Runs validation, scoring, and persistence, and returns the report
+        dict. The whole persistence step (attempt + responses + score) is
+        one transaction: either it all lands, or none of it does — no more
+        orphaned attempts with zero responses when scoring blows up
+        partway through.
 
-        try:
-            self.setup()
-            total_points:float = self.handle_answers()
-            percentage = (total_points /
-                          float(self.questionnaire.max_score) if float(self.questionnaire.max_score) > 0 else 0.0) * 100
+        Safe to call more than once: the first call's result is cached and
+        replayed on subsequent calls instead of re-running (which would
+        otherwise silently create a second attempt).
+        """
+        if self._evaluated:
+            return self._cached_response
+
+        self.validate()
+        self.setup()
+
+        with transaction.atomic():
+            total_points = self.handle_answers()
+
+            max_score = float(self.questionnaire.max_score)
+            percentage = (total_points / max_score) * 100 if max_score > 0 else 0.0
+            # Clamp defensively: weight/config mistakes elsewhere could in
+            # theory push totals above max_score or below zero, and
+            # Feedback.from_percentage raises ValueError outside [0, 100].
+            percentage = min(max(percentage, 0.0), 100.0)
+
             passed = percentage >= 50
             score = total_points
             feedback = Feedback.from_percentage(percentage)
             message = feedback.message.split(".")
 
             response = {
-                "percentage":round(percentage,2),
-                "passed":passed,
-                "score":round(score,2),
-                "max_score":float(self.questionnaire.max_score),
-                "feedback":message,
-                "details":str(self.questionnaire.description),
-                "email_sent":False,
-                "attempt_id":self.attempt_id,
-
+                "percentage": round(percentage, 2),
+                "passed": passed,
+                "score": round(score, 2),
+                "max_score": max_score,
+                "feedback": message,
+                "details": str(self.questionnaire.description),
+                "email_sent": False,  # sending is not implemented yet
+                "attempt_id": self.attempt_id,
             }
 
-            # save to attempt score
             attempt_score_data = {
-                "attempt":self.attempt_instance,
-                "raw_score":round(score,2),
-                "weighted_score":round(score,2),
-                "percentage":round(min(max(percentage, 0), 100), 2)
+                "attempt": self.attempt_instance,
+                "raw_score": round(score, 2),
+                "weighted_score": round(score, 2),
+                "percentage": round(percentage, 2),
             }
-            
+
             attempt_score_form = AttemptScoreForm(attempt_score_data)
-
             if not attempt_score_form.is_valid():
-                logger.error(str(attempt_score_form.errors))
-                return {}
-            
-            attempt_score_form.save()
-            
+                logger.error("AttemptScore validation failed: %s", attempt_score_form.errors)
+                # Raising here rolls back the whole transaction, including
+                # the attempt and responses just written above.
+                raise EvaluationError("Failed to persist the computed score.", code="server_error")
 
-            return response
+            attempt_score_form.save()
+
+        self._cached_response = response
+        self._evaluated = True
+        return response
+
+    @property
+    def build_response(self) -> dict[str, Any]:
+        """
+        Backwards-compatible alias for `evaluate()`.
+
+        Kept as a property because it used to do heavy DB writes on every
+        attribute access (a footgun: accessing it twice created two
+        attempts). It now delegates to `evaluate()`, which caches its
+        result, so repeated access is idempotent. Failures still resolve to
+        `{}` here to preserve the old calling contract — but real errors are
+        logged with their category instead of silently vanishing. Callers
+        that want to distinguish "bad request" from "server broke" should
+        call `evaluate()` directly and catch `EvaluationError`.
+        """
+        try:
+            return self.evaluate()
+        except EvaluationError as e:
+            logger.error("Evaluation failed [%s]: %s", e.code, e.message)
+            return {}
         except Exception as e:
-            logger.error(str(e))
+            logger.exception("Unexpected error during evaluation: %s", e)
             return {}

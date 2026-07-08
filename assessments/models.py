@@ -282,8 +282,8 @@ class QuestionnaireAttempt(models.Model):
         null=True,blank=True
     )
 
-    started_at     = models.DateTimeField(auto_now_add=True)
-    completed_at   = models.DateTimeField(null=True, blank=True,auto_now_add=True)
+    started_at     = models.DateTimeField(null=True,blank=True)
+    completed_at   = models.DateTimeField(null=True, blank=True)
     ip_address     = models.GenericIPAddressField(null=True, blank=True)
     user_agent     = models.TextField(blank=True,null=True)
 

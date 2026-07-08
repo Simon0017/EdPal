@@ -1,0 +1,100 @@
+code,name,slug,type,website,country
+UON,University of Nairobi,university-of-nairobi,PUBLIC_UNIVERSITY,https://www.uonbi.ac.ke,Kenya
+KU,Kenyatta University,kenyatta-university,PUBLIC_UNIVERSITY,https://www.ku.ac.ke,Kenya
+JKUAT,Jomo Kenyatta University of Agriculture and Technology,jomo-kenyatta-university-of-agriculture-and-technology,PUBLIC_UNIVERSITY,https://www.jkuat.ac.ke,Kenya
+MU,Moi University,moi-university,PUBLIC_UNIVERSITY,https://www.mu.ac.ke,Kenya
+EU,Egerton University,egerton-university,PUBLIC_UNIVERSITY,https://www.egerton.ac.ke,Kenya
+MSU,Maseno University,maseno-university,PUBLIC_UNIVERSITY,https://www.maseno.ac.ke,Kenya
+MMUST,Masinde Muliro University of Science and Technology,masinde-muliro-university-of-science-and-technology,PUBLIC_UNIVERSITY,https://www.mmust.ac.ke,Kenya
+TU-K,The Technical University of Kenya,the-technical-university-of-kenya,PUBLIC_UNIVERSITY,https://www.tukenya.ac.ke,Kenya
+TUM,Technical University of Mombasa,technical-university-of-mombasa,PUBLIC_UNIVERSITY,https://www.tum.ac.ke,Kenya
+DEKUT,Dedan Kimathi University of Technology,dedan-kimathi-university-of-technology,PUBLIC_UNIVERSITY,https://www.dkut.ac.ke,Kenya
+CHUKA,Chuka University,chuka-university,PUBLIC_UNIVERSITY,https://www.chuka.ac.ke,Kenya
+SEKU,South Eastern Kenya University,south-eastern-kenya-university,PUBLIC_UNIVERSITY,https://www.seku.ac.ke,Kenya
+KPU,Kisii University,kisii-university,PUBLIC_UNIVERSITY,https://www.kisiiuniversity.ac.ke,Kenya
+PU,Pwani University,pwani-university,PUBLIC_UNIVERSITY,https://www.pu.ac.ke,Kenya
+JOOUST,Jaramogi Oginga Odinga University of Science and Technology,jaramogi-oginga-odinga-university-of-science-and-technology,PUBLIC_UNIVERSITY,https://www.jooust.ac.ke,Kenya
+LU,Laikipia University,laikipia-university,PUBLIC_UNIVERSITY,https://www.laikipia.ac.ke,Kenya
+MERU,Meru University of Science and Technology,meru-university-of-science-and-technology,PUBLIC_UNIVERSITY,https://www.must.ac.ke,Kenya
+TTU,Taita Taveta University,taita-taveta-university,PUBLIC_UNIVERSITY,https://www.ttu.ac.ke,Kenya
+MUK,Maasai Mara University,maasai-mara-university,PUBLIC_UNIVERSITY,https://www.mmarau.ac.ke,Kenya
+KABI,Kabianga University,kabianga-university,PUBLIC_UNIVERSITY,https://www.kabianga.ac.ke,Kenya
+ELD,University of Eldoret,university-of-eldoret,PUBLIC_UNIVERSITY,https://www.uoeld.ac.ke,Kenya
+KARU,Karatina University,karatina-university,PUBLIC_UNIVERSITY,https://www.karu.ac.ke,Kenya
+Co-op,The Co-operative University of Kenya,the-co-operative-university-of-kenya,PUBLIC_UNIVERSITY,https://www.cuk.ac.ke,Kenya
+MUT,Murang'a University of Technology,muranga-university-of-technology,PUBLIC_UNIVERSITY,https://www.mut.ac.ke,Kenya
+EMBU,University of Embu,university-of-embu,PUBLIC_UNIVERSITY,https://www.embuni.ac.ke,Kenya
+MACHAKOS,Machakos University,machakos-university,PUBLIC_UNIVERSITY,https://www.mksu.ac.ke,Kenya
+RONGO,Rongo University,rongo-university,PUBLIC_UNIVERSITY,https://www.rongovarsity.ac.ke,Kenya
+GARISSA,Garissa University,garissa-university,PUBLIC_UNIVERSITY,https://www.gau.ac.ke,Kenya
+TURKANA,Turkana University College,turkana-university-college,PUBLIC_UNIVERSITY,https://www.tuc.ac.ke,Kenya
+ALU,Alupe University,alupe-university,PUBLIC_UNIVERSITY,https://www.au.ac.ke,Kenya
+KAIMOSI,Kaimosi Bioresource University College,kaimosi-bioresource-university-college,PUBLIC_UNIVERSITY,https://www.kaimosiuniversity.ac.ke,Kenya
+TOM-MBOYA,Tom Mboya University,tom-mboya-university,PUBLIC_UNIVERSITY,https://www.tmu.ac.ke,Kenya
+THARAKA,Tharaka University,tharaka-university,PUBLIC_UNIVERSITY,https://www.tharaka.ac.ke,Kenya
+SU,Strathmore University,strathmore-university,PRIVATE_UNIVERSITY,https://www.strathmore.edu,Kenya
+MKU,Mount Kenya University,mount-kenya-university,PRIVATE_UNIVERSITY,https://www.mku.ac.ke,Kenya
+ANU,Africa Nazarene University,africa-nazarene-university,PRIVATE_UNIVERSITY,https://www.anu.ac.ke,Kenya
+DAYSTAR,Daystar University,daystar-university,PRIVATE_UNIVERSITY,https://www.daystar.ac.ke,Kenya
+CUEA,Catholic University of Eastern Africa,catholic-university-of-eastern-africa,PRIVATE_UNIVERSITY,https://www.cuea.edu,Kenya
+USIU,United States International University Africa,united-states-international-university-africa,PRIVATE_UNIVERSITY,https://www.usiu.ac.ke,Kenya
+KCA,KCA University,kca-university,PRIVATE_UNIVERSITY,https://www.kca.ac.ke,Kenya
+KABU,Kabarak University,kabarak-university,PRIVATE_UNIVERSITY,https://www.kabarak.ac.ke,Kenya
+PAC,Pan Africa Christian University,pan-africa-christian-university,PRIVATE_UNIVERSITY,https://www.pacuniversity.ac.ke,Kenya
+RIARA,Riara University,riara-university,PRIVATE_UNIVERSITY,https://www.riarauniversity.ac.ke,Kenya
+ZETECH,Zetech University,zetech-university,PRIVATE_UNIVERSITY,https://www.zetech.ac.ke,Kenya
+ST-PAUL,St. Paul's University,st-pauls-university,PRIVATE_UNIVERSITY,https://www.spu.ac.ke,Kenya
+METHODIST,Kenya Methodist University,kenya-methodist-university,PRIVATE_UNIVERSITY,https://www.kemu.ac.ke,Kenya
+AFRICA-INT,Africa International University,africa-international-university,PRIVATE_UNIVERSITY,https://www.aiu.ac.ke,Kenya
+UMMA,Umma University,umma-university,PRIVATE_UNIVERSITY,https://www.umma.ac.ke,Kenya
+SCOTT,Scott Christian University,scott-christian-university,PRIVATE_UNIVERSITY,https://www.scott.ac.ke,Kenya
+GLUK,Great Lakes University of Kisumu,great-lakes-university-of-kisumu,PRIVATE_UNIVERSITY,https://www.gluk.ac.ke,Kenya
+ADVENTIST,Adventist University of Africa,adventist-university-of-africa,PRIVATE_UNIVERSITY,https://www.aua.ac.ke,Kenya
+GRETSA,Gretsa University,gretsa-university,PRIVATE_UNIVERSITY,https://www.gretsauniversity.ac.ke,Kenya
+KAG,KAG East University,kag-east-university,PRIVATE_UNIVERSITY,https://www.east.ac.ke,Kenya
+MANAGEMENT,The Management University of Africa,the-management-university-of-africa,PRIVATE_UNIVERSITY,https://www.mua.ac.ke,Kenya
+AMREF,Amref International University,amref-international-university,PRIVATE_UNIVERSITY,https://www.amref.ac.ke,Kenya
+TANGAZA,Tangaza University,tangaza-university,PRIVATE_UNIVERSITY,https://www.tangaza.ac.ke,Kenya
+MARIST,Marist International University College,marist-international-university-college,PRIVATE_UNIVERSITY,https://www.miuc.ac.ke,Kenya
+KNP,Kisumu National Polytechnic,kisumu-national-polytechnic,TECHNICAL,https://www.kisumupoly.ac.ke,Kenya
+NPT,The Kenya National Polytechnic,the-kenya-national-polytechnic,TECHNICAL,https://www.kenyapoly.ac.ke,Kenya
+RSTTI,Rift Valley Technical Training Institute,rift-valley-technical-training-institute,TECHNICAL,https://www.rvtti.ac.ke,Kenya
+NTC,Nyeri National Polytechnic,nyeri-national-polytechnic,TECHNICAL,https://www.nyeripoly.ac.ke,Kenya
+KSTVET,Kenya School of TVET,kenya-school-of-tvet,TECHNICAL,https://www.kstvet.ac.ke,Kenya
+MIST,Matili Technical Training Institute,matili-technical-training-institute,TECHNICAL,https://www.matilitti.ac.ke,Kenya
+KTTI,Kabete National Polytechnic,kabete-national-polytechnic,TECHNICAL,https://www.kabetepolytechnic.ac.ke,Kenya
+MIP,Meru National Polytechnic,meru-national-polytechnic,TECHNICAL,https://www.merunationalpolytechnic.ac.ke,Kenya
+SIGALAGALA,The Sigalagala National Polytechnic,the-sigalagala-national-polytechnic,TECHNICAL,https://www.sigalagalapoly.ac.ke,Kenya
+NEP,North Eastern Province International Polytechnic,north-eastern-province-international-polytechnic,TECHNICAL,https://www.neppoly.ac.ke,Kenya
+ELD-POLY,Eldoret National Polytechnic,eldoret-national-polytechnic,TECHNICAL,https://www.tenp.ac.ke,Kenya
+KITUI-TNB,Kitui National Polytechnic,kitui-national-polytechnic,TECHNICAL,https://www.kituipoly.ac.ke,Kenya
+COAST-POLY,Coast National Polytechnic,coast-national-polytechnic,TECHNICAL,https://www.coastpoly.ac.ke,Kenya
+MACHAKOS-TTI,Machakos Technical Training Institute,machakos-technical-training-institute,TECHNICAL,https://www.machakostti.ac.ke,Kenya
+THIKA-TNB,Thika Technical Training Institute,thika-technical-training-institute,TECHNICAL,https://www.thikatechnical.ac.ke,Kenya
+SANGALO,Sang'alo Institute of Science and Technology,sangalo-institute-of-science-and-technology,TECHNICAL,https://www.sist.ac.ke,Kenya
+RAMOGI,Ramogi Institute of Advanced Technology,ramogi-institute-of-advanced-technology,TECHNICAL,https://www.riat.ac.ke,Kenya
+MAWANEGO,Mawego Technical Training Institute,mawego-technical-training-institute,TECHNICAL,https://www.mawegoti.ac.ke,Kenya
+OL'LESSOS,Rift Valley Institute of Science and Technology,rift-valley-institute-of-science-and-technology,TECHNICAL,https://www.rvist.ac.ke,Kenya
+BUSHANGALA,Bushangala Technical Training Institute,bushangala-technical-training-institute,TECHNICAL,https://www.bushangalatti.ac.ke,Kenya
+BUMBE,Bumbe Technical Training Institute,bumbe-technical-training-institute,TECHNICAL,https://www.bumbetti.ac.ke,Kenya
+SIRENDE,Sirende Technical Training Institute,sirende-technical-training-institute,TECHNICAL,https://www.sirendetti.ac.ke,Kenya
+CHUKA-TTI,Chuka Technical Training Institute,chuka-technical-training-institute,TECHNICAL,https://www.chukatti.ac.ke,Kenya
+KEROKA,Keroka Technical Training Institute,keroka-technical-training-institute,TECHNICAL,https://www.kerokatti.ac.ke,Kenya
+GATUNDU,Gatundu Technical Training Institute,gatundu-technical-training-institute,TECHNICAL,https://www.gatundutti.ac.ke,Kenya
+EBUKWANGA,Ebukwanga Technical Training Institute,ebukwanga-technical-training-institute,TECHNICAL,https://www.ebukwangatti.ac.ke,Kenya
+KIPIPIRI,Kipipiri Technical Training Institute,kipipiri-technical-training-institute,TECHNICAL,https://www.kipipiritti.ac.ke,Kenya
+SOT,Sot Technical Training Institute,sot-technical-training-institute,TECHNICAL,https://www.sotti.ac.ke,Kenya
+MAALIM,Maalim Mohammed Technical Training Institute,maalim-mohammed-technical-training-institute,TECHNICAL,https://www.mmtti.ac.ke,Kenya
+WOTE,Wote Technical Training Institute,wote-technical-training-institute,TECHNICAL,https://www.wotetti.ac.ke,Kenya
+MUKIRIA,Mukiria Technical Training Institute,mukiria-technical-training-institute,TECHNICAL,https://www.mukiriatti.ac.ke,Kenya
+MOLO,Molo Technical Training Institute,molo-technical-training-institute,TECHNICAL,https://www.molotti.ac.ke,Kenya
+TSEIKURU,Tseikuru Technical Training Institute,tseikuru-technical-training-institute,TECHNICAL,https://www.tseikurutti.ac.ke,Kenya
+SIAYA,Siaya National Polytechnic,siaya-national-polytechnic,TECHNICAL,https://www.siayapoly.ac.ke,Kenya
+ALICE,Alice Anona National Polytechnic,alice-anona-national-polytechnic,TECHNICAL,https://www.alicepoly.ac.ke,Kenya
+WERU,Weru Technical Training Institute,weru-technical-training-institute,TECHNICAL,https://www.werutti.ac.ke,Kenya
+SHAMBERERE,Shamberere Technical Training Institute,shamberere-technical-training-institute,TECHNICAL,https://www.shambereretti.ac.ke,Kenya
+BURETI,Bureti Technical Training Institute,bureti-technical-training-institute,TECHNICAL,https://www.buretitti.ac.ke,Kenya
+MICHUKI,Michuki Technical Training Institute,michuki-technical-training-institute,TECHNICAL,https://www.michukitti.ac.ke,Kenya
+KIAMBU,Kiambu National Polytechnic,kiambu-national-polytechnic,TECHNICAL,https://www.kiambupoly.ac.ke,Kenya
+KITI,Kenya Industrial Training Institute,kenya-industrial-training-institute,TECHNICAL,https://www.kiti.ac.ke,Kenya
+KASARANI,Kasarani Technical and Vocational College,kasarani-technical-and-vocational-college,TECHNICAL,https://www.kasaranitvc.ac.ke,Kenya

@@ -24,6 +24,8 @@ let mode         = 'longform';  // 'longform' | 'step'
 let currentStep  = 0;           // 0-based index, step mode only
 let timerHandle  = null;
 let secondsLeft  = 0;
+let timeStarted = null;
+let timeCompleted = null;
 
 /* ─────────────────────────────────────────────────────────────
    CSRF
@@ -55,6 +57,7 @@ function init () {
   // Timer
   if (data.time_limit_minutes) {
     secondsLeft = data.time_limit_minutes * 60;
+    timeStarted = new Date().toISOString()
     startTimer();
   } else {
     const timerEl = document.getElementById('qaTimer');
@@ -666,10 +669,14 @@ function buildPayload () {
     answer_value: answers[q.id] !== undefined ? answers[q.id] : null,
   }));
 
+  timeCompleted = new Date().toISOString();
+
   return {
     questionnaire_id: window.QUESTIONNAIRE_ID,
     answers:          answersArr,
     send_email:       document.getElementById('qaSendEmail').checked,
+    started_at: timeStarted,
+    completed_at: timeCompleted,
   };
 }
 

@@ -8,6 +8,7 @@ import logging
 from typing import Any
 from collections import Counter
 import requests
+from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +36,9 @@ class DashboardService():
             self.Attempts = attempts
 
             metrics = attempts.aggregate(
-                completed=Count("id", filter=Q(status="COMPLETED")),
+                completed=Count("questionnaire__id", filter=Q(status="COMPLETED"),distinct=True),
                 avg_pct=Avg("score__percentage"),
-                in_progress = Count("id", filter=Q(status="IN_PROGRESS")),
+                in_progress = Count("questionnaire__id", filter=Q(status="IN_PROGRESS"),distinct=True),
             )
 
             latest_attempt = attempts.order_by("-completed_at").first()
@@ -121,7 +122,7 @@ class DashboardService():
                 .annotate(total=Count("id"))
                 .order_by("question__question_type")
             )
-
+            
             data = [
                 {
                     "label": res["question__question_type"],
@@ -136,6 +137,7 @@ class DashboardService():
         
     
     @property
+    @lru_cache(maxsize=None)
     def quote_of_the_day(self): # cache this 
         try:
             response = requests.get("https://zenquotes.io/api/today")

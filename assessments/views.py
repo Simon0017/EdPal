@@ -7,7 +7,6 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET
 from django.http import HttpRequest,JsonResponse
 from django.db.models import Prefetch,Count,Avg,Max,Min,Q
-
 from core.decorators import outer_exception_handler
 from .models import *
 
@@ -234,6 +233,7 @@ class AttemptQuestionnaire(View):
             "description": questionnaire.description,
             "max_score": questionnaire.max_score,
             "time_limit_minutes": questionnaire.time_limit_minutes,
+            "instructions":questionnaire.instructions
         } 
 
         context = {

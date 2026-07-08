@@ -1,6 +1,6 @@
 from django.http import HttpRequest
 from django.core.paginator import Paginator, EmptyPage
-from django.db.models import Max, Count, Q
+from django.db.models import Max, Count, Q, Prefetch
 from typing import Any
 from ..models import Questionnaire, QuestionnaireAttempt
 from core.models import Tag
@@ -66,7 +66,12 @@ class FetchQuestionnairesService:
             profile = getattr(self.user, 'profile', None)
 
             # Base questionnaire query
-            queryset = Questionnaire.objects.all()
+            queryset = Questionnaire.objects.prefetch_related(
+                        Prefetch(
+                            "attempts",
+                            queryset=QuestionnaireAttempt.objects.filter(profile=self.user.profile),
+                        )
+                    )
 
             # Apply search filtering
             if self.query:
@@ -110,12 +115,14 @@ class FetchQuestionnairesService:
             for q in page_obj.object_list:
                 # Format the ISO timestamp string for the frontend JS Date constructor
                 date_str = q.latest_attempt_date.isoformat() if q.latest_attempt_date else None
+                latest_attempt = q.attempts.get(pk=q.latest_attempt_id)
+                
 
                 serialized_results.append({
                     "id": q.id,
                     "title": q.title,
                     "description": q.description,
-                    "status": q.status.lower(),  
+                    "status": latest_attempt.status.lower(),  
                     "attempt_count": q.total_attempts_count,
                     "percentage": q.max_percentage,
                     "attempt_id": q.latest_attempt_id,

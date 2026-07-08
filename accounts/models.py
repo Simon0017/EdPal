@@ -14,7 +14,7 @@ class UserProfile(models.Model):
     )
 
     date_of_birth   = models.DateField(null=True, blank=True)
-    about_me        = models.TextField(blank=True)
+    about_me        = models.TextField(null=True,blank=True)
     avatar          = models.ImageField(
         upload_to="avatars/%Y/%m/",
         null=True, blank=True

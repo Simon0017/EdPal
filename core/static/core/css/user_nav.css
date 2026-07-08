@@ -146,6 +146,14 @@ html.theme-dark { --bg: rgb(4, 26, 41); }
   color: inherit;
 }
 
+.un-nav__img {
+  width: 2rem;
+  height: 2rem;
+  object-fit: cover;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
 /* Sidebar footer */
 .un-sidebar__footer {
   display: flex;

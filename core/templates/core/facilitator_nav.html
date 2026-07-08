@@ -63,7 +63,16 @@
               class="sn-nav__item {% block nav_questionnaires %}{% endblock %}"
               {% block nav_questionnaires_aria %}{% endblock %}
             >
-              <span class="sn-nav__icon" aria-hidden="true"><i class="fa fa-question-circle" aria-hidden="true"></i></span>
+              <svg class="sn-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/>
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M14 2v5h5"/>
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M12 11v6"/>
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M9 14h6"/>
+              </svg>
               <span>Create Questionnaires</span>
             </a>
           </li>
@@ -73,13 +82,19 @@
               class="sn-nav__item  {% block nav_questionnaires_manage %}{% endblock %}"
               {% block nav_questionnaires_manage_aria %}{% endblock %}
             >
-              <span class="sn-nav__icon" aria-hidden="true"><i class="fa fa-question-circle" aria-hidden="true"></i></span>
+              <svg class="sn-nav__icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M5 4a2 2 0 1 1 4 0 2 2 0 0 1-4 0ZM3 5a1 1 0 1 0 0 2h2.126a4.002 4.002 0 0 0 7.748 0H17a1 1 0 1 0 0-2h-4.126a4.002 4.002 0 0 0-7.748 0H3Zm8 9a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm-8-1a1 1 0 1 0 0 2h6.126a4.002 4.002 0 0 0 7.748 0H17a1 1 0 1 0 0-2h-.126a4.002 4.002 0 0 0-7.748 0H3Z"/>
+              </svg>
               <span>Manage Questionnares</span>
             </a>
           </li>
           <li>
             <a href="#" class="sn-nav__item {% block nav_attempts %}{% endblock %}">
-              <span class="sn-nav__icon" aria-hidden="true"><i class="fa fa-user-plus" aria-hidden="true"></i></span>
+              <svg class="sn-nav__icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M8 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/>
+                <path d="M2 18a6 6 0 0 1 12 0H2Z"/>
+                <path d="M16 5v2h2v2h-2v2h-2V9h-2V7h2V5h2Z"/>
+              </svg>
               <span>Attempts</span>
             </a>
           </li>
@@ -92,7 +107,9 @@
         <ul class="sn-nav__list" role="list">
           <li>
             <a href="#" class="sn-nav__item {% block nav_settings %}{% endblock %}">
-              <span class="sn-nav__icon" aria-hidden="true">⚙</span>
+              <svg class="sn-nav__icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M7.84 1.804A1 1 0 0 1 8.82 1h2.36a1 1 0 0 1 .98.804l.331 1.652a6.993 6.993 0 0 1 1.929 1.115l1.598-.54a1 1 0 0 1 1.186.447l1.18 2.044a1 1 0 0 1-.205 1.251l-1.267 1.113a7.047 7.047 0 0 1 0 2.228l1.267 1.113a1 1 0 0 1 .206 1.25l-1.18 2.045a1 1 0 0 1-1.187.447l-1.598-.54a6.993 6.993 0 0 1-1.929 1.115l-.33 1.652a1 1 0 0 1-.98.804H8.82a1 1 0 0 1-.98-.804l-.331-1.652a6.993 6.993 0 0 1-1.929-1.115l-1.598.54a1 1 0 0 1-1.186-.447l-1.18-2.044a1 1 0 0 1 .205-1.251l1.267-1.114a7.05 7.05 0 0 1 0-2.227L1.821 7.773a1 1 0 0 1-.206-1.25l1.18-2.045a1 1 0 0 1 1.187-.447l1.598.54A6.993 6.993 0 0 1 7.51 3.456l.33-1.652ZM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+              </svg>
               <span>General</span>
             </a>
           </li>
@@ -103,7 +120,13 @@
 
     <!-- Sidebar footer: user info -->
     <div class="sn-sidebar__footer">
-      <span class="sn-nav__icon" aria-hidden="true">👤</span>
+      {% if request.user.is_authenticated and request.user.profile and request.user.profile.avatar %}
+          <img src="{{ request.user.profile.avatar.url }}" class="sn-nav__img" alt="User avatar">
+      {% else %}
+          <svg class="sn-nav__icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="width:1rem;height:1rem;flex-shrink:0">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10 12a5.99 5.99 0 0 0-4.793 2.39A6.483 6.483 0 0 0 10 16.5a6.483 6.483 0 0 0 4.793-2.11A5.99 5.99 0 0 0 10 12Z" clip-rule="evenodd"/>
+          </svg>
+      {% endif %}
       <span class="sn-sidebar__username">
         {% if request.user.is_authenticated %}{{ request.user.username }}{% else %}Staff{% endif %}
       </span>

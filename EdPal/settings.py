@@ -44,6 +44,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    "django.contrib.sites",
+    'allauth',
+    'allauth.account',
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
     'analytics',
     'core',
     'accounts',
@@ -56,6 +61,7 @@ INSTALLED_APPS = [
 AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
     "guardian.backends.ObjectPermissionBackend",
+    'allauth.account.auth_backends.AuthenticationBackend',# `allauth` specific authentication methods, such as login by email
 )
 
 MIDDLEWARE = [
@@ -67,6 +73,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = 'EdPal.urls'
@@ -81,6 +88,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.request', # allauth
             ],
         },
     },
@@ -222,7 +230,8 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 SOCIALACCOUNT_LOGIN_ON_GET = True  # Automatically log in users on GET request
-ACCOUNT_UNIQUE_EMAIL = True # only one email per 
+ACCOUNT_UNIQUE_EMAIL = True # only one email per
+# ACCOUNT_EMAIL_VERIFICATION = "none" 
 
 # Email conf
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -352,7 +361,7 @@ JAZZMIN_SETTINGS = {
         {"model": "auth.User"},
 
         # App with dropdown menu to all its models pages (Permissions checked against models)
-        {"app": "USERS"},
+        {"app": "accounts"},
     ],
 
     #############

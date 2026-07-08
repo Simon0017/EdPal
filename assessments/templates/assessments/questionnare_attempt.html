@@ -27,13 +27,13 @@
   <!-- ══ ATTEMPT HEADER ══ -->
   <div class="qa-header">
     <div class="qa-header__info">
-      <h1 class="qa-header__title">{{ questionnaire.title }}</h1>
-      {% if questionnaire.time_limit_minutes %}
+      <h1 class="qa-header__title">{{ data.title }}</h1>
+      {% if data.time_limit_minutes %}
       <div class="qa-timer" id="qaTimer" aria-live="polite" aria-label="Time remaining">
         <svg class="qa-timer__icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
           <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.75-13a.75.75 0 0 0-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 0 0 0-1.5h-3.25V5Z" clip-rule="evenodd"/>
         </svg>
-        <span id="qaTimerDisplay">{{ questionnaire.time_limit_minutes }}:00</span>
+        <span id="qaTimerDisplay">{{ data.time_limit_minutes }}:00</span>
       </div>
       {% endif %}
     </div>
@@ -64,12 +64,12 @@
   </div>
 
   <!-- ══ INSTRUCTIONS ══ -->
-  {% if questionnaire.instructions %}
+  {% if data.instructions %}
   <div class="qa-instructions" id="qaInstructions">
     <svg class="qa-instructions__icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
       <path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z" clip-rule="evenodd"/>
     </svg>
-    <p>{{ questionnaire.instructions }}</p>
+    <p>{{ data.instructions }}</p>
   </div>
   {% endif %}
 

@@ -70,13 +70,14 @@ class InstitutionImporter(BaseImporter):
 
         to_create = []
         to_update = []
+        skipped_count = 0
 
         for record in self.records:
             if record.code not in existing:
                 to_create.append(record)
             else:
                 if not self.update:
-                    self.result.skipped += 1
+                    skipped_count += 1
                     continue
                 
                 existing_record = existing[record.code]
@@ -97,10 +98,19 @@ class InstitutionImporter(BaseImporter):
                     batch_size=self.batch_size,
                 )
 
-        self.result.created += len(to_create)
-        self.result.updated += len(to_update)
+        created_count = len(to_create)
+        updated_count = len(to_update)
+
+        for attr_name in ["result", "import_result", "_result"]:
+            if hasattr(self, attr_name):
+                res_obj = getattr(self, attr_name)
+                if res_obj is not None:
+                    res_obj.created += created_count
+                    res_obj.updated += updated_count
+                    res_obj.skipped += skipped_count
+                    break
 
         logger.info(
-            f"Import complete summary - Created: {len(to_create)}, "
-            f"Updated: {len(to_update)}, Skipped: {self.result.skipped}"
+            f"Import complete summary - Created: {created_count}, "
+            f"Updated: {updated_count}, Skipped: {skipped_count}"
         )

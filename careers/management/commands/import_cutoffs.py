@@ -47,7 +47,7 @@ class Command(BaseCommand):
 
         try:
             importer = CutoffClusterImporter(
-                file_path=source_path,
+                source=source_path,
                 update=options["update"],
                 dry_run=options["dry_run"],
                 batch_size=options["batch_size"],
@@ -56,12 +56,12 @@ class Command(BaseCommand):
             result = importer.run()
 
             self.stdout.write(self.style.SUCCESS("\n--- Import Operation Complete Summary ---"))
-            self.stdout.write(f"Created Reference Nodes: {result.created}")
-            self.stdout.write(f"Updated Reference Nodes: {result.updated}")
-            self.stdout.write(f"Skipped Reference Nodes: {result.skipped}")
-            self.stdout.write(f"Failed Reference Nodes:  {result.failed}")
+            self.stdout.write(f"Created Reference Nodes: {result.created if result else 'N/A'}")
+            self.stdout.write(f"Updated Reference Nodes: {result.updated if result else 'N/A'}")
+            self.stdout.write(f"Skipped Reference Nodes: {result.skipped if result else 'N/A'}")
+            self.stdout.write(f"Failed Reference Nodes:  {result.failed if result else 'N/A'}")
             
-            if result.warnings:
+            if result and result.warnings:
                 self.stdout.write(self.style.WARNING(f"Logged Operational Pipeline Warnings ({len(result.warnings)})"))
                 
         except Exception as err:

@@ -134,9 +134,16 @@
 
     <!-- Footer -->
     <div class="un-sidebar__footer">
-      <svg class="un-nav__icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="width:1rem;height:1rem;flex-shrink:0">
+      <!-- <svg class="un-nav__icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="width:1rem;height:1rem;flex-shrink:0">
         <path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10 12a5.99 5.99 0 0 0-4.793 2.39A6.483 6.483 0 0 0 10 16.5a6.483 6.483 0 0 0 4.793-2.11A5.99 5.99 0 0 0 10 12Z" clip-rule="evenodd"/>
-      </svg>
+      </svg> -->
+      {% if request.user.is_authenticated and request.user.profile and request.user.profile.avatar %}
+          <img src="{{ request.user.profile.avatar.url }}" class="un-nav__img" alt="User avatar">
+      {% else %}
+          <svg class="un-nav__icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="width:1rem;height:1rem;flex-shrink:0">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM10 12a5.99 5.99 0 0 0-4.793 2.39A6.483 6.483 0 0 0 10 16.5a6.483 6.483 0 0 0 4.793-2.11A5.99 5.99 0 0 0 10 12Z" clip-rule="evenodd"/>
+          </svg>
+      {% endif %}
       <span class="un-sidebar__username">
         {% if request.user.is_authenticated %}{{ request.user.get_full_name|default:request.user.username }}{% else %}Guest{% endif %}
       </span>

@@ -19,6 +19,7 @@ from core.decorators import outer_exception_handler
 from core.tasks.email_tasks import send_welcome_email,send_reset_password_email
 from .services.dashboard_pop import DashboardService
 
+
 logger = logging.getLogger(__name__)
 token_generator = PasswordResetTokenGenerator()
 
@@ -315,7 +316,7 @@ class UserProfile(View):
                 "email":request.user.email
             },
             "profile": {
-                "date_of_birth": request.user.profile.date_of_birth.strftime("%Y-%m-%d"),
+                "date_of_birth": request.user.profile.date_of_birth.strftime("%Y-%m-%d") if request.user.profile.date_of_birth else None,
                 "about_me": request.user.profile.about_me,
                 "avatar_url": request.user.profile.avatar.url if request.user.profile.avatar else None,
                 "subjects": list(request.user.profile.subjects.values("id", "name"))

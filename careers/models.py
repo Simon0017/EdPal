@@ -130,6 +130,10 @@ class CutoffCluster(models.Model):
         "careers.Course", on_delete=models.CASCADE,
         related_name="cutoff_clusters"
     )
+    institution = models.ForeignKey(
+        "careers.Institution",on_delete=models.CASCADE,
+        related_name="cutoff_clusters",null=True
+    )
     cluster_number = models.PositiveSmallIntegerField()
     cutoff_points  = models.DecimalField(max_digits=5, decimal_places=3)
     year           = models.PositiveSmallIntegerField(db_index=True)

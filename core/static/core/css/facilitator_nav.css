@@ -164,6 +164,14 @@ html.theme-dark {
   text-align: center;
 }
 
+.sn-nav__img{
+  width: 2rem;
+  height: 2rem;
+  object-fit: cover;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
 /* ── Sidebar footer ── */
 .sn-sidebar__footer {
   display: flex;
