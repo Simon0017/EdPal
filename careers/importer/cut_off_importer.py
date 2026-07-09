@@ -28,11 +28,7 @@ class CutoffClusterImporter(BaseImporter):
             if self.df[col].isna().any() or (self.df[col].astype(str).str.strip() == "").any():
                 raise ValueError(f"Column '{col}' contains empty or missing values.")
 
-        # Check for unique combinations within the spreadsheet itself
-        duplicated_rows = self.df.duplicated(subset=["course", "cluster_number", "year"])
-        if duplicated_rows.any():
-            raise ValueError("Duplicate rows for the same course, cluster, and year found inside the import file.")
-
+        
         try:
             self.df["cluster_number"] = self.df["cluster_number"].astype(int)
             self.df["year"] = self.df["year"].astype(int)
@@ -46,31 +42,36 @@ class CutoffClusterImporter(BaseImporter):
         logger.info("Validation passed.")
 
     def transform(self) -> None:
-        unique_courses = set(self.df["course"].unique())
-        unique_inst_refs = set(self.df["institution"].unique())
+        unique_courses = [str(x).strip().lower() for x in self.df["course"].unique()]
+        unique_inst_refs = [str(x).strip().lower() for x in self.df["institution"].unique()]
 
-        # Build flexible course resolution map
         course_map = {}
         if unique_courses:
             course_query = Q(code__in=unique_courses) | Q(title__in=unique_courses)
+            course_query |= Q(code__in=[c.upper() for c in unique_courses]) | Q(title__in=[c.upper() for c in unique_courses])
+            
             for course in Course.objects.filter(course_query):
-                course_map[course.code.lower()] = course
-                course_map[course.title.lower()] = course
+                course_map[course.code.strip().lower()] = course
+                course_map[course.title.strip().lower()] = course
 
-        # Build flexible institution resolution map
+        
         institution_map = {}
         if unique_inst_refs:
-            inst_query = Q(code__in=unique_inst_refs) | Q(name__in=unique_inst_refs)
+            # Build an efficient OR query checking code OR name case-insensitively (__iexact)
+            inst_query = Q()
+            for ref in unique_inst_refs:
+                inst_query |= Q(code__iexact=ref) | Q(name__iexact=ref)
+            
             for inst in Institution.objects.filter(inst_query):
-                institution_map[inst.code.lower()] = inst
-                institution_map[inst.name.lower()] = inst
+                institution_map[inst.code.strip().lower()] = inst
+                institution_map[inst.name.strip().lower()] = inst
 
         self.records = []
-        self.record_relations = []  # Explicit structural link index mapping tracking arrays
+        self.record_relations = []
 
         for row in self.df.itertuples(index=False):
-            course_obj = course_map.get(str(row.course).lower())
-            inst_obj = institution_map.get(str(row.institution).lower())
+            course_obj = course_map.get(str(row.course).strip().lower())
+            inst_obj = institution_map.get(str(row.institution).strip().lower())
 
             if not course_obj:
                 raise ValueError(f"Failed to match Course reference target: '{row.course}'")

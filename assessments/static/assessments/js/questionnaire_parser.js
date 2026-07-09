@@ -723,6 +723,9 @@ function _getActiveSections () {
       const manualVal = manualEl ? manualEl.value.trim() : '';
       meta[f] = colVal || manualVal;
     });
+    // Uploaded files frequently omit system fields like status; default it
+    // so import doesn't fail validation on a field the sheet never had.
+    if (!meta.status) meta.status = 'DRAFT';
 
     /* ── Questions ── */
     const qRows = questionSection.sheet ? (_sheets[questionSection.sheet] || []) : [];

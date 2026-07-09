@@ -47,7 +47,7 @@ class Command(BaseCommand):
 
         try:
             importer = CareerImporter(
-                file_path=source_path,
+                source=source_path,
                 update=options["update"],
                 dry_run=options["dry_run"],
                 batch_size=options["batch_size"],

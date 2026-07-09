@@ -40,6 +40,7 @@ class AdminQuestinnare(View):
     @method_decorator(login_required)
     @method_decorator(outer_exception_handler(logger))
     def post(self,request:HttpRequest,*args,**kwargs):
+        print(request.POST)
         questionnare_obj =  CreateQuestionniare(request)
 
         questionnaire_form = questionnare_obj.create__questionnare_form()
@@ -55,7 +56,7 @@ class AdminQuestinnare(View):
         if has_errors:
             logger.error(questionnare_obj.errors)
             return JsonResponse(
-                {"success": False, "errors": questionnare_obj.errors},
+                {"success": False, "errors": "Client Error in form submission.Submit ticket for checks."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 

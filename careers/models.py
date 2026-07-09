@@ -89,7 +89,7 @@ class Course(models.Model):
     """
     code    = models.CharField(max_length=20, unique=True)
     title          = models.CharField(max_length=255, db_index=True)
-    slug           = models.SlugField(max_length=255, unique=True)
+    slug           = models.SlugField(max_length=255)
     description    = models.TextField(blank=True)
     qualification  = models.CharField(
         max_length=30,
@@ -142,8 +142,8 @@ class CutoffCluster(models.Model):
         db_table = "careers_cutoff_cluster"
         constraints = [
             models.UniqueConstraint(
-                fields=["course", "cluster_number", "year"],
-                name="uq_cutoff_course_cluster_year"
+                fields=["course", "cluster_number", "year","institution"],
+                name="uq_cutoff_course_cluster_year_institution"
             )
         ]
 

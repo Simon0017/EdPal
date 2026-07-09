@@ -329,7 +329,7 @@ class AttemptEvaluationService:
             return 0.0
 
     def handle_multi(self, question: "Question", answer_value: Any, response: "QuestionResponse") -> float:
-        """Multiple Select (partial credit by overlap with correct choices)."""
+        """Multiple Select (partial credit, penalized for both missed and extra/incorrect selections)."""
         try:
             if not isinstance(answer_value, list) or len(answer_value) == 0:
                 response.is_correct = False
@@ -348,15 +348,14 @@ class AttemptEvaluationService:
                 response.save()
                 return 0.0
 
-            # str() every element defensively — an answer list containing
-            # non-string values (numbers, None) previously raised
-            # AttributeError out of `str.lower`, again killing the whole
-            # attempt via the outer try/except.
             correct_lower = {str(c).strip().lower() for c in correct_choices}
             answer_lower = {str(a).strip().lower() for a in answer_value}
 
             intersection = correct_lower & answer_lower
-            ratio = len(intersection) / len(correct_lower)
+
+            recall = len(intersection) / len(correct_lower)
+            precision = len(intersection) / len(answer_lower)  # answer_lower is non-empty, checked above
+            ratio = recall * precision
 
             points_awarded = max_points * ratio
 
@@ -367,21 +366,188 @@ class AttemptEvaluationService:
             return points_awarded
 
         except Exception as e:
-            # Bug fix: same bare-`return`-None issue as handle_mcq.
             logger.exception("Error scoring MULTI question %s: %s", question.id, e)
             return 0.0
 
-    def handle_numeric(self, question, answer_value, response) -> float:
-        return 0.0
+    def handle_numeric(self, question: "Question", answer_value: Any, response: "QuestionResponse") -> float:
+        """
+        Numeric / Range. Correct target + tolerance are read from
+        `question.numeric_config` (e.g. {"correct": 7.5, "tolerance": 0.5}).
+        Falls back to an `is_correct` AnswerChoice whose choice_key holds the
+        target value, for consistency with how MCQ stores its answer.
+        """
+        try:
+            try:
+                submitted = float(answer_value)
+            except (TypeError, ValueError):
+                logger.warning(
+                    "Non-numeric answer_value %r for NUMERIC question %s, awarding 0.",
+                    answer_value, question.id
+                )
+                response.is_correct = False
+                response.points_awarded = 0.0
+                response.save()
+                return 0.0
 
-    def handle_text(self, question, answer_value, response) -> float:
-        return 0.0
+            config = question.numeric_config or {}
+            target = config.get("correct")
+            tolerance = config.get("tolerance", config.get("step", 0)) or 0
 
-    def handle_likert(self, question, answer_value, response) -> float:
-        return 0.0
+            if target is None:
+                choices = list(question.answer_choices.all())
+                correct_choices = [c for c in choices if c.is_correct]
+                if not correct_choices:
+                    logger.error(
+                        "No correct value configured for NUMERIC question %s "
+                        "(neither numeric_config['correct'] nor an is_correct choice).",
+                        question.id
+                    )
+                    response.is_correct = False
+                    response.points_awarded = 0.0
+                    response.save()
+                    return 0.0
+                try:
+                    target = float(correct_choices[0].choice_key)
+                except (TypeError, ValueError):
+                    logger.error(
+                        "Correct choice_key for NUMERIC question %s is not numeric.",
+                        question.id
+                    )
+                    response.is_correct = False
+                    response.points_awarded = 0.0
+                    response.save()
+                    return 0.0
 
-    def handle_ranking(self, question, answer_value, response) -> float:
-        return 0.0
+            max_points = float(question.max_points or 0)
+            is_correct = abs(submitted - float(target)) <= float(tolerance)
+
+            response.is_correct = is_correct
+            response.points_awarded = max_points if is_correct else 0.0
+            response.save()
+
+            return response.points_awarded
+
+        except Exception as e:
+            logger.exception("Error scoring NUMERIC question %s: %s", question.id, e)
+            return 0.0
+
+    def handle_text(self, question: "Question", answer_value: Any, response: "QuestionResponse") -> float:
+        """
+        Free text. Matches (case-insensitive, whitespace-trimmed) against
+        any `is_correct` AnswerChoice.choice_text, so multiple acceptable
+        phrasings can be configured as separate correct choices.
+        """
+        try:
+            submitted = str(answer_value or "").strip().lower()
+
+            if not submitted:
+                response.is_correct = False
+                response.points_awarded = 0.0
+                response.save()
+                return 0.0
+
+            choices = list(question.answer_choices.all())
+            acceptable = [str(c.choice_text or "").strip().lower() for c in choices if c.is_correct]
+
+            if not acceptable:
+                logger.error("No correct answer(s) configured for TEXT question %s", question.id)
+                response.is_correct = False
+                response.points_awarded = 0.0
+                response.save()
+                return 0.0
+
+            max_points = float(question.max_points or 0)
+            is_correct = submitted in acceptable
+
+            response.is_correct = is_correct
+            response.points_awarded = max_points if is_correct else 0.0
+            response.save()
+
+            return response.points_awarded
+
+        except Exception as e:
+            logger.exception("Error scoring TEXT question %s: %s", question.id, e)
+            return 0.0
+
+    def handle_likert(self, question: "Question", answer_value: Any, response: "QuestionResponse") -> float:
+        """
+        Likert scale. answer_value is the selected choice_key (e.g. "1".."5").
+        Credit is `AnswerChoice.partial_score` (0..1) * max_points, per the
+        model's own docstring for that field.
+        """
+        try:
+            submitted = str(answer_value).strip().lower()
+
+            choices = list(question.answer_choices.all())
+            match = next((c for c in choices if str(c.choice_key).strip().lower() == submitted), None)
+
+            if match is None:
+                logger.warning(
+                    "Answer %r for LIKERT question %s does not match any choice_key, awarding 0.",
+                    answer_value, question.id
+                )
+                response.is_correct = False
+                response.points_awarded = 0.0
+                response.save()
+                return 0.0
+
+            max_points = float(question.max_points or 0)
+            fraction = float(match.partial_score or 0)
+            points_awarded = max_points * fraction
+
+            response.points_awarded = points_awarded
+            response.is_correct = fraction >= 1
+            response.save()
+
+            return points_awarded
+
+        except Exception as e:
+            logger.exception("Error scoring LIKERT question %s: %s", question.id, e)
+            return 0.0
+
+    def handle_ranking(self, question: "Question", answer_value: Any, response: "QuestionResponse") -> float:
+        """
+        Drag-to-rank. answer_value is a list of choice_keys in the order the
+        user placed them. The correct order is the choices' own `order`
+        field. Credit is the fraction of positions that match exactly.
+        """
+        try:
+            if not isinstance(answer_value, list) or len(answer_value) == 0:
+                response.is_correct = False
+                response.points_awarded = 0.0
+                response.save()
+                return 0.0
+
+            choices = sorted(question.answer_choices.all(), key=lambda c: c.order)
+            correct_order = [str(c.choice_key).strip().lower() for c in choices]
+
+            if not correct_order:
+                logger.error("No choices configured for RANKING question %s", question.id)
+                response.is_correct = False
+                response.points_awarded = 0.0
+                response.save()
+                return 0.0
+
+            submitted_order = [str(a).strip().lower() for a in answer_value]
+
+            max_points = float(question.max_points or 0)
+            positions = min(len(correct_order), len(submitted_order))
+            matches = sum(
+                1 for i in range(positions) if submitted_order[i] == correct_order[i]
+            )
+            ratio = matches / len(correct_order)
+
+            points_awarded = max_points * ratio
+
+            response.points_awarded = points_awarded
+            response.is_correct = ratio == 1
+            response.save()
+
+            return points_awarded
+
+        except Exception as e:
+            logger.exception("Error scoring RANKING question %s: %s", question.id, e)
+            return 0.0
 
     # ------------------------------------------------------------------
     # Response building

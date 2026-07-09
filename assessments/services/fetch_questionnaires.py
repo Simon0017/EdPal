@@ -115,14 +115,14 @@ class FetchQuestionnairesService:
             for q in page_obj.object_list:
                 # Format the ISO timestamp string for the frontend JS Date constructor
                 date_str = q.latest_attempt_date.isoformat() if q.latest_attempt_date else None
-                latest_attempt = q.attempts.get(pk=q.latest_attempt_id)
+                latest_attempt = q.attempts.get(pk=q.latest_attempt_id) if q.latest_attempt_id else None
                 
 
                 serialized_results.append({
                     "id": q.id,
                     "title": q.title,
                     "description": q.description,
-                    "status": latest_attempt.status.lower(),  
+                    "status": latest_attempt.status.lower() if latest_attempt else "not_started",  
                     "attempt_count": q.total_attempts_count,
                     "percentage": q.max_percentage,
                     "attempt_id": q.latest_attempt_id,

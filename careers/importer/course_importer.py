@@ -18,8 +18,8 @@ class CourseImporter(BaseImporter):
         "code",
         "title",
         "qualification",
-        "institution_ref",  # Can hold institution code OR name
-        "career_ref",       # Can hold career code OR title
+        "institution",
+        "career_code",
         "duration_years",
         "description",
     )
@@ -29,7 +29,7 @@ class CourseImporter(BaseImporter):
     def validate(self) -> None:
         validate_required_columns(self.df, self.REQUIRED_COLUMNS)
 
-        for col in ["code", "title", "qualification", "institution_ref", "career_ref"]:
+        for col in ["code", "title", "qualification", "institution", "career_code"]:
             if self.df[col].isna().any() or (self.df[col].astype(str).str.strip() == "").any():
                 raise ValueError(f"Column '{col}' contains empty or missing values.")
 
@@ -37,11 +37,6 @@ class CourseImporter(BaseImporter):
             duplicate_codes = self.df[self.df["code"].duplicated()]["code"].unique()
             raise ValueError(f"Duplicate course codes found in file: {duplicate_codes}")
 
-        if self.df["title"].duplicated().any():
-            duplicate_titles = self.df[self.df["title"].duplicated()]["title"].unique()
-            raise ValueError(f"Duplicate course titles found in file: {duplicate_titles}")
-
-        # Normalize capitalization for choices lookup
         self.df["qualification"] = self.df["qualification"].astype(str).str.upper().str.strip()
         invalid_quals = self.df[~self.df["qualification"].isin(self.VALID_QUALIFICATIONS)]["qualification"].unique()
         if invalid_quals.size > 0:
@@ -49,47 +44,58 @@ class CourseImporter(BaseImporter):
 
         self.df["duration_years"] = self.df["duration_years"].fillna(4).astype(int)
         self.df["description"] = self.df["description"].fillna("").astype(str).str.strip()
-        self.df["institution_ref"] = self.df["institution_ref"].astype(str).str.strip()
-        self.df["career_ref"] = self.df["career_ref"].astype(str).str.strip()
+        self.df["institution"] = self.df["institution"].astype(str).str.strip()
+        self.df["career_code"] = self.df["career_code"].astype(str).str.strip()
 
         logger.info("Validation passed.")
 
     def transform(self) -> None:
-        unique_inst_refs = set(self.df["institution_ref"].unique())
-        unique_career_refs = set(self.df["career_ref"].unique())
+        unique_inst_refs = [str(x).strip() for x in self.df["institution"].unique()]
+        unique_career_refs = [str(x).strip() for x in self.df["career_code"].unique()]
 
         institution_map = {}
         if unique_inst_refs:
-            inst_query = Q(code__in=unique_inst_refs) | Q(name__in=unique_inst_refs)
+            # Build an efficient OR query checking code OR name case-insensitively (__iexact)
+            inst_query = Q()
+            for ref in unique_inst_refs:
+                inst_query |= Q(code__iexact=ref) | Q(name__iexact=ref)
+            
             for inst in Institution.objects.filter(inst_query):
-                institution_map[inst.code.lower()] = inst
-                institution_map[inst.name.lower()] = inst
+                institution_map[inst.code.strip().lower()] = inst
+                institution_map[inst.name.strip().lower()] = inst
 
         career_map = {}
         if unique_career_refs:
-            career_query = Q(code__in=unique_career_refs) | Q(title__in=unique_career_refs)
+            # Build an efficient OR query checking code OR title case-insensitively (__iexact)
+            career_query = Q()
+            for ref in unique_career_refs:
+                career_query |= Q(code__iexact=ref) | Q(title__iexact=ref)
+                
             for career in Career.objects.filter(career_query):
-                career_map[career.code.lower()] = career
-                career_map[career.title.lower()] = career
+                career_map[career.code.strip().lower()] = career
+                career_map[career.title.strip().lower()] = career
 
         self.records = []
-        # Store relational assignments out-of-band to map during database save execution
         self.record_relations = {}
 
-        #Populate the object staging collections
         for row in self.df.itertuples(index=False):
-            inst_obj = institution_map.get(str(row.institution_ref).lower())
-            career_obj = career_map.get(str(row.career_ref).lower())
+            inst_obj = institution_map.get(str(row.institution).strip().lower())
+            career_obj = career_map.get(str(row.career_code).strip().lower())
 
             if not inst_obj:
-                raise ValueError(f"Failed to match Institution reference target: '{row.institution_ref}'")
+                raise ValueError(f"Failed to match Institution reference target: '{row.institution}'")
             if not career_obj:
-                raise ValueError(f"Failed to match Career reference target: '{row.career_ref}'")
+                raise ValueError(
+                    f"Failed to match Career reference target: '{row.career_code}'. "
+                    f"Ensure this career master data exists in the system before running the course import."
+                )
+
+            unique_title_slug = f"{row.title} {inst_obj.code}"
 
             course = Course(
                 code=row.code,
                 title=row.title,
-                slug=slugify(row.title),
+                slug=slugify(unique_title_slug),
                 qualification=row.qualification,
                 duration_years=row.duration_years,
                 description=row.description,
@@ -111,9 +117,9 @@ class CourseImporter(BaseImporter):
 
         to_create = []
         to_update = []
+        skipped_count = 0
 
         for record in self.records:
-            # Reattach the resolved foreign key pointers safely prior to compilation
             relations = self.record_relations[record.code]
             record.institution_id = relations["institution_id"]
             record.career_id = relations["career_id"]
@@ -122,7 +128,7 @@ class CourseImporter(BaseImporter):
                 to_create.append(record)
             else:
                 if not self.update:
-                    self.result.skipped += 1
+                    skipped_count += 1
                     continue
 
                 existing_record = existing[record.code]
@@ -154,10 +160,19 @@ class CourseImporter(BaseImporter):
                         batch_size=self.batch_size,
                     )
 
-        self.result.created += len(to_create)
-        self.result.updated += len(to_update)
+        created_count = len(to_create)
+        updated_count = len(to_update)
+
+        for attr_name in ["result", "import_result", "_result"]:
+            if hasattr(self, attr_name):
+                res_obj = getattr(self, attr_name)
+                if res_obj is not None:
+                    res_obj.created += created_count
+                    res_obj.updated += updated_count
+                    res_obj.skipped += skipped_count
+                    break
 
         logger.info(
-            f"Import complete summary - Created: {len(to_create)}, "
-            f"Updated: {len(to_update)}, Skipped: {self.result.skipped}"
+            f"Import complete summary - Created: {created_count}, "
+            f"Updated: {updated_count}, Skipped: {skipped_count}"
         )

@@ -1,4 +1,5 @@
 # career_importer.py
+#SELF NOTE MAKE SURE TO ADD A COMMAND THAT DYNAMIALLY LOOKS FOR THE FIELDS AND CREATES EMPTY FIELDS WHICH THE IMPRTER REQUIRES
 
 from __future__ import annotations
 
@@ -19,7 +20,7 @@ class CareerImporter(BaseImporter):
         "title",
         "sector",
         "description",
-        "tags",
+        # "tags", -> Marked optional to handle dataset variations gracefully
     )
 
     def validate(self) -> None:
@@ -38,7 +39,12 @@ class CareerImporter(BaseImporter):
             raise ValueError(f"Duplicate career titles found in file: {duplicate_names}")
 
         self.df["description"] = self.df["description"].fillna("").astype(str).str.strip()
-        self.df["tags"] = self.df["tags"].fillna("").astype(str).str.strip()
+        
+        # Safely assign tags column if it exists, otherwise instantiate an empty string column
+        if "tags" in self.df.columns:
+            self.df["tags"] = self.df["tags"].fillna("").astype(str).str.strip()
+        else:
+            self.df["tags"] = ""
 
         logger.info("Validation passed.")
 
@@ -47,16 +53,19 @@ class CareerImporter(BaseImporter):
         # Store a mapping of row code to raw tags string for the import_data phase
         self.row_tags_map = {}
 
+        # Using _asdict() inside the loop to support safe fallback parsing
         for row in self.df.itertuples(index=False):
+            row_dict = row._asdict() if hasattr(row, "_asdict") else row._current_via_dict
+            
             career = Career(
-                code=row.code,
-                title=row.title,
-                slug=slugify(row.title),
-                sector=row.sector,
-                description=row.description,
+                code=row_dict.get("code"),
+                title=row_dict.get("title"),
+                slug=slugify(row_dict.get("title", "")),
+                sector=row_dict.get("sector"),
+                description=row_dict.get("description"),
             )
             self.records.append(career)
-            self.row_tags_map[row.code] = row.tags
+            self.row_tags_map[row_dict.get("code")] = row_dict.get("tags", "")
             
         logger.info(f"Transformed {len(self.records)} rows into Career model instances.")
 
@@ -68,13 +77,14 @@ class CareerImporter(BaseImporter):
 
         to_create = []
         to_update = []
+        skipped_count = 0
 
         for record in self.records:
             if record.code not in existing:
                 to_create.append(record)
             else:
                 if not self.update:
-                    self.result.skipped += 1
+                    skipped_count += 1
                     continue
 
                 existing_record = existing[record.code]
@@ -105,7 +115,7 @@ class CareerImporter(BaseImporter):
                     if tags_str:
                         all_tag_codes.update([t.strip() for t in tags_str.split(",") if t.strip()])
 
-                db_tags = {tag.code: tag for tag in Tag.objects.filter(code__in=all_tag_codes)}
+                db_tags = {tag.code: tag for tag in Tag.objects.filter(title__in=all_tag_codes)}
 
                 # 3. Build CareerTag through-model instances
                 career_tags_to_create = []
@@ -134,10 +144,19 @@ class CareerImporter(BaseImporter):
                 if career_tags_to_create:
                     CareerTag.objects.bulk_create(career_tags_to_create, batch_size=self.batch_size)
 
-        self.result.created += len(to_create)
-        self.result.updated += len(to_update)
+        created_count = len(to_create)
+        updated_count = len(to_update)
+
+        for attr_name in ["result", "import_result", "_result"]:
+            if hasattr(self, attr_name):
+                res_obj = getattr(self, attr_name)
+                if res_obj is not None:
+                    res_obj.created += created_count
+                    res_obj.updated += updated_count
+                    res_obj.skipped += skipped_count
+                    break
 
         logger.info(
-            f"Import complete summary - Created: {len(to_create)}, "
-            f"Updated: {len(to_update)}, Skipped: {self.result.skipped}"
+            f"Import complete summary - Created: {created_count}, "
+            f"Updated: {updated_count}, Skipped: {skipped_count}"
         )
