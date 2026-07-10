@@ -1,0 +1,233 @@
+{% extends "core/user_nav.html" %}
+{% load static %}
+
+{% block title %}Careers — EdPal{% endblock %}
+{% block nav_careers_dashboard %}un-nav__item--active{% endblock %}
+{% block nav_careers_dashboard_aria %}aria-current="page"{% endblock %}>
+
+{% block nav_dashboard %}{% endblock %}
+
+{% block breadcrumbs %}
+  <a href="{% url 'user_dashboard' %}" class="un-breadcrumbs__item">Dashboard</a>
+  <span class="un-breadcrumbs__sep">/</span>
+  <span class="un-breadcrumbs__item un-breadcrumbs__item--current">Careers</span>
+{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'careers/css/careers.css' %}" />
+{% endblock %}
+
+{% block content %}
+<script>
+  window.CR_URLS = {
+    explore:     "{% url 'careers_explore' %}",
+    match:       "{% url 'careers_match' %}",
+    searchAPI:   "{% url 'search_careers' %}",
+    searchTags:  "{% url 'tags' %}",
+  };
+</script>
+<form id="crCsrfForm" class="hidden">{% csrf_token %}</form>
+
+<div class="careers-page">
+
+  <!-- Hero -->
+  <section class="cr-hero" aria-labelledby="crHeroTitle">
+    <span class="cr-hero__eyebrow">Careers</span>
+    <h1 class="cr-hero__title" id="crHeroTitle">
+      Find your <span>right path</span>.
+    </h1>
+    <p class="cr-hero__sub">
+      Personalised career recommendations based on your assessments and interests.
+      Explore courses, institutions, and cutoff points — all in one place.
+    </p>
+    <div class="cr-hero__actions">
+      <a href="{% url 'careers_explore' %}" class="btn-primary">Explore Careers</a>
+      <a href="{% url 'careers_match' %}"   class="btn-outline">View My Match</a>
+    </div>
+  </section>
+
+  <!-- Metrics -->
+  <div class="cr-metrics" aria-label="Career statistics">
+    <div class="cr-metric-card">
+      <span class="cr-metric-card__label">Careers Explored</span>
+      <strong class="cr-metric-card__value">{{ metrics.explored|default:"—" }}</strong>
+      <span class="cr-metric-card__sub">unique careers</span>
+    </div>
+    <div class="cr-metric-card">
+      <span class="cr-metric-card__label">Top Match</span>
+      <strong class="cr-metric-card__value">{{ metrics.top_match_pct|default:"—" }}{% if metrics.top_match_pct %}%{% endif %}</strong>
+      <span class="cr-metric-card__sub">{{ metrics.top_match_title|default:"complete your profile" }}</span>
+    </div>
+    <div class="cr-metric-card">
+      <span class="cr-metric-card__label">Courses Available</span>
+      <strong class="cr-metric-card__value">{{ metrics.course_count|default:"—" }}</strong>
+      <span class="cr-metric-card__sub">across all careers</span>
+    </div>
+    <div class="cr-metric-card">
+      <span class="cr-metric-card__label">Institutions</span>
+      <strong class="cr-metric-card__value">{{ metrics.institution_count|default:"—" }}</strong>
+      <span class="cr-metric-card__sub">offering matched courses</span>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="cr-section">
+    <div class="cr-search-wrap" style="max-width:480px;">
+      <svg class="cr-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+           aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input class="form-input cr-search"
+             type="search"
+             id="crDashSearch"
+             placeholder="Search careers, courses, institutions…"
+             aria-label="Search careers" />
+    </div>
+    <div class="cr-chips" id="crDashSearchResults" aria-live="polite" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- Recommended Careers -->
+  <section class="cr-section" aria-labelledby="crRecCareersTitle">
+    <div class="cr-section-header">
+      <h2 class="cr-section-title" id="crRecCareersTitle">Recommended Careers</h2>
+      <a href="{% url 'careers_match' %}" class="cr-section-link">View full match</a>
+    </div>
+
+    <div class="cr-grid cr-grid--3" id="crRecCareers" aria-live="polite">
+      {% if recommended_careers %}
+        {% for rec in recommended_careers %}
+          {% include "careers/partials/recommendation_card.html" %}
+        {% endfor %}
+      {% else %}
+        <!-- Skeleton placeholders — hidden once JS loads real data -->
+        {% for _ in "123" %}
+        <div class="cr-skeleton-card" aria-hidden="true">
+          <div class="cr-skeleton"></div>
+          <div class="cr-skeleton"></div>
+          <div class="cr-skeleton"></div>
+          <div class="cr-skeleton"></div>
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    {% if not recommended_careers %}
+    <div class="cr-empty" id="crRecEmpty" style="display:none;">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+      <p>Complete your profile to unlock personalised recommendations.</p>
+      <a href="{% url 'user_profile' %}" class="btn-primary" style="margin-top:4px;">Update Profile</a>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- Recommended Courses -->
+  <section class="cr-section" aria-labelledby="crRecCoursesTitle">
+    <div class="cr-section-header">
+      <h2 class="cr-section-title" id="crRecCoursesTitle">Recommended Courses</h2>
+      <a href="{% url 'careers_explore' %}#courses" class="cr-section-link">Browse all</a>
+    </div>
+    <div class="cr-grid cr-grid--4" id="crRecCourses">
+      {% for course in recommended_courses %}
+        {% include "careers/partials/course_card.html" %}
+      {% empty %}
+        {% for _ in "1234" %}
+        <div class="cr-skeleton-card" aria-hidden="true">
+          <div class="cr-skeleton" style="height:10px;width:40%;"></div>
+          <div class="cr-skeleton" style="height:14px;width:80%;"></div>
+          <div class="cr-skeleton" style="height:10px;width:60%;"></div>
+        </div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Trending + Quick Actions + Recent Activity (3-col layout) -->
+  <div class="cr-grid" style="grid-template-columns:1fr 1fr 1fr;gap:16px;">
+
+    <!-- Trending Careers -->
+    <section class="cr-section" aria-labelledby="crTrendingTitle"
+             style="background:var(--color-card);border:1px solid var(--color-border);border-radius:16px;padding:20px;">
+      <h2 class="cr-section-title" id="crTrendingTitle" style="margin-bottom:14px;">Trending</h2>
+      <ul style="list-style:none;margin:0;padding:0;">
+        {% for career in trending_careers %}
+        <li class="cr-trending-item">
+          <span class="cr-trending-item__rank">{{ forloop.counter }}</span>
+          <a href="{% url 'career_detail' career.slug %}" class="cr-trending-item__name"
+             style="text-decoration:none;color:inherit;">{{ career.title }}</a>
+          <span class="cr-badge cr-badge--muted">{{ career.sector }}</span>
+        </li>
+        {% empty %}
+        <li class="cr-empty" style="padding:20px 0;">No trending data yet.</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <!-- Quick Actions -->
+    <section class="cr-section" aria-labelledby="crActionsTitle"
+             style="background:var(--color-card);border:1px solid var(--color-border);border-radius:16px;padding:20px;">
+      <h2 class="cr-section-title" id="crActionsTitle" style="margin-bottom:14px;">Quick Actions</h2>
+      <div class="cr-action-grid">
+        <a href="{% url 'careers_explore' %}" class="cr-action-tile">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          Explore Careers
+        </a>
+        <a href="{% url 'careers_match' %}" class="cr-action-tile">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22,4 12,14.01 9,11.01"/>
+          </svg>
+          My Career Match
+        </a>
+        <a href="{% url 'user_profile' %}" class="cr-action-tile">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          Edit Profile
+        </a>
+        <a href="{% url 'user_questionnares' %}" class="cr-action-tile">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14,2 14,8 20,8"/>
+          </svg>
+          Take Assessment
+        </a>
+      </div>
+    </section>
+
+    <!-- Recent Activity -->
+    <section class="cr-section" aria-labelledby="crActivityTitle"
+             style="background:var(--color-card);border:1px solid var(--color-border);border-radius:16px;padding:20px;">
+      <h2 class="cr-section-title" id="crActivityTitle" style="margin-bottom:14px;">Recent Activity</h2>
+      <ul class="cr-activity-list">
+        {% for activity in recent_activity %}
+        <li class="cr-activity-item">
+          <div class="cr-activity-item__dot" aria-hidden="true"></div>
+          <span class="cr-activity-item__text">{{ activity.description }}</span>
+          <span class="cr-activity-item__time">{{ activity.timestamp|timesince }} ago</span>
+        </li>
+        {% empty %}
+        <li class="cr-empty" style="padding:20px 0;">No activity yet.</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+  </div>
+
+</div><!-- /careers-page -->
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'careers/js/dashboard.js' %}"></script>
+{% endblock %}

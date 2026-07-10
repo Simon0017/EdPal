@@ -1,0 +1,287 @@
+{% extends "core/user_nav.html" %}
+{% load static %}
+
+{% block title %}My Career Match — EdPal{% endblock %}
+{% block nav_careers_match %}un-nav__item--active{% endblock %}
+{% block nav_careers_match_aria %}aria-current="page"{% endblock %}>
+
+{% block breadcrumbs %}
+  <a href="{% url 'user_dashboard' %}"    class="un-breadcrumbs__item">Dashboard</a>
+  <span class="un-breadcrumbs__sep">/</span>
+  <a href="{% url 'careers_dashboard' %}" class="un-breadcrumbs__item">Careers</a>
+  <span class="un-breadcrumbs__sep">/</span>
+  <span class="un-breadcrumbs__item un-breadcrumbs__item--current">My Match</span>
+{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'careers/css/careers.css' %}" />
+{% endblock %}
+
+{% block content %}
+<script>
+  window.CR_URLS = {
+    explore:     "{% url 'careers_explore' %}",
+    careerDetail: "/careers/",
+    profile:     "{% url 'user_profile' %}",
+  };
+
+  // window.CR_MATCH = {
+  //   career:              {{ career_json|default:"{}"|safe }},
+  //   match_pct:           {{ match_pct|default:0 }},
+  //   insights:            {{ insights_json|default:"[]"|safe }},
+  //   courses:             {{ courses_json|default:"[]"|safe }},
+  //   institutions:        {{ institutions_json|default:"[]"|safe }},
+  //   subject_reqs:        {{ subject_reqs_json|default:"[]"|safe }},
+  //   cutoffs:             {{ cutoffs_json|default:"[]"|safe }},
+  //   similar_careers:     {{ similar_careers_json|default:"[]"|safe }},
+  //   user_grades:         {{ user_grades_json|default:"{}"|safe }},
+  //   user_points:         {{ user_points|default:"null"|safe }},
+  // };
+</script>
+<form id="crCsrfForm" class="hidden">{% csrf_token %}</form>
+
+<div class="careers-page" id="crMatchPage">
+
+  <!-- ── Hero recommendation ── -->
+  <section class="cr-hero" aria-labelledby="crMatchHeroTitle" id="crMatchHero">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap;">
+
+      <div style="flex:1;min-width:240px;">
+        <span class="cr-hero__eyebrow">Your Top Match</span>
+        <h1 class="cr-hero__title" id="crMatchHeroTitle">
+          {{ career.title|default:"Complete your profile" }}
+        </h1>
+        {% if career.sector %}
+          <p style="font-size:0.82rem;color:var(--color-primary);font-weight:600;margin:0 0 8px;">
+            {{ career.sector }}
+          </p>
+        {% endif %}
+        <p class="cr-hero__sub">{{ career.description|default:"Update your profile and complete assessments to unlock your personalised career match." }}</p>
+        <div class="cr-hero__actions">
+          {% if career.slug %}
+            <a href="/careers/{{ career.slug }}/" class="btn-primary">Explore This Career</a>
+          {% endif %}
+          <a href="{% url 'careers_explore' %}" class="btn-outline">Browse All Careers</a>
+          {% if not career.slug %}
+            <a href="{% url 'user_profile' %}" class="btn-primary">Update Profile</a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Match score ring -->
+      <div class="cr-score-ring" id="crMatchRing" aria-label="Career match score: {{ match_pct }}%">
+        <svg class="cr-ring-svg" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="cr-ring-bg"   cx="60" cy="60" r="54"/>
+          <circle class="cr-ring-fill" cx="60" cy="60" r="54" id="crRingFill"/>
+        </svg>
+        <div class="cr-ring-center">
+          <span class="cr-ring-value" id="crRingValue">0%</span>
+          <span class="cr-ring-label">match</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Main grid (2-col: content left, sidebar right) ── -->
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;" id="crMatchGrid">
+
+    <!-- LEFT COLUMN -->
+    <div style="display:flex;flex-direction:column;gap:24px;">
+
+      <!-- Why this recommendation -->
+      <section aria-labelledby="crInsightsTitle">
+        <div class="cr-section-header">
+          <h2 class="cr-section-title" id="crInsightsTitle">Why this recommendation?</h2>
+        </div>
+        <div class="cr-accordion" id="crInsightsList" aria-label="Recommendation insights">
+          {% for insight in insights %}
+          <div class="cr-accordion-item" data-index="{{ forloop.counter0 }}">
+            <button class="cr-accordion-item__trigger"
+                    aria-expanded="false"
+                    aria-controls="cr-insight-body-{{ forloop.counter0 }}"
+                    type="button">
+              <span>{{ insight.title }}</span>
+              <svg class="cr-accordion-item__chevron" width="16" height="16" viewBox="0 0 24 24"
+                   fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                   stroke-linejoin="round" aria-hidden="true">
+                <polyline points="6,9 12,15 18,9"/>
+              </svg>
+            </button>
+            <div class="cr-accordion-item__body" id="cr-insight-body-{{ forloop.counter0 }}" role="region">
+              <div class="cr-accordion-item__inner">
+                <p style="font-size:0.85rem;opacity:0.7;line-height:1.65;margin:0;">{{ insight.body }}</p>
+                {% if insight.score %}
+                  <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
+                    <div style="flex:1;height:4px;background:var(--color-border);border-radius:4px;overflow:hidden;">
+                      <div style="height:100%;background:var(--gradient-primary);border-radius:4px;width:0;"
+                           class="cr-rec-card__match-fill" data-pct="{{ insight.score }}"></div>
+                    </div>
+                    <span style="font-family:var(--font-mono),monospace;font-size:0.74rem;color:var(--color-primary);">
+                      {{ insight.score }}%
+                    </span>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="cr-empty">
+            <p>Complete more assessments to see detailed insights.</p>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <!-- Recommended Courses -->
+      <section aria-labelledby="crMatchCoursesTitle">
+        <div class="cr-section-header">
+          <h2 class="cr-section-title" id="crMatchCoursesTitle">Courses for this Career</h2>
+          <a href="{% url 'careers_explore' %}#courses" class="cr-section-link">Browse all</a>
+        </div>
+        <div class="cr-grid cr-grid--2">
+          {% for course in recommended_courses %}
+            {% include "careers/partials/course_card.html" %}
+          {% empty %}
+          <div class="cr-empty" style="grid-column:span 2;">
+            <p>No courses found for this career.</p>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <!-- Subject Requirements -->
+      <section aria-labelledby="crSubjectsTitle">
+        <div class="cr-section-header">
+          <h2 class="cr-section-title" id="crSubjectsTitle">Subject Requirements</h2>
+        </div>
+        {% include "careers/partials/subject_table.html" %}
+      </section>
+
+      <!-- Cutoff History -->
+      <section aria-labelledby="crCutoffTitle">
+        <div class="cr-section-header">
+          <h2 class="cr-section-title" id="crCutoffTitle">Cutoff History</h2>
+        </div>
+        {% include "careers/partials/cutoff_table.html" %}
+      </section>
+
+      <!-- Can I Qualify — eligibility checker -->
+      <section aria-labelledby="crEligibilityTitle">
+        <div class="cr-section-header">
+          <h2 class="cr-section-title" id="crEligibilityTitle">Can I Qualify?</h2>
+        </div>
+
+        <div class="cr-eligibility">
+          <p class="cr-eligibility__title">Check your eligibility</p>
+
+          <div class="cr-eligibility__grid" id="crEligibilityGrid">
+            <!-- Subject grade inputs populated by JS from subject_reqs -->
+          </div>
+
+          <div class="form-group" style="max-width:200px;">
+            <label class="form-label" for="crUserPoints">My total points</label>
+            <input class="form-input" type="number" id="crUserPoints"
+                   min="0" max="84" step="1" placeholder="e.g. 42"
+                   aria-describedby="crEligibilityResult" />
+          </div>
+
+          <button class="btn-primary" id="crCheckEligibility" type="button"
+                  style="font-size:0.85rem;padding:10px 22px;margin-top:4px;">
+            Check Eligibility
+          </button>
+
+          <div class="cr-eligibility__result" id="crEligibilityResult" role="alert" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <!-- Similar Careers -->
+      <section aria-labelledby="crSimilarTitle">
+        <div class="cr-section-header">
+          <h2 class="cr-section-title" id="crSimilarTitle">Similar Careers</h2>
+          <a href="{% url 'careers_explore' %}" class="cr-section-link">Explore more</a>
+        </div>
+        <div class="cr-grid cr-grid--3" id="crSimilarGrid">
+          {% for career in similar_careers %}
+            {% include "careers/partials/career_card.html" %}
+          {% empty %}
+          <div class="cr-empty" style="grid-column:span 3;">
+            <p>No similar careers found.</p>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+    </div><!-- /left column -->
+
+    <!-- RIGHT SIDEBAR -->
+    <aside style="display:flex;flex-direction:column;gap:16px;position:sticky;top:70px;">
+
+      <!-- Institutions -->
+      <section aria-labelledby="crMatchInstTitle"
+               style="background:var(--color-card);border:1px solid var(--color-border);border-radius:16px;padding:18px;">
+        <h2 class="cr-section-title" id="crMatchInstTitle" style="margin-bottom:14px;font-size:0.95rem;">
+          Offering Institutions
+        </h2>
+        <div style="display:flex;flex-direction:column;gap:8px;" id="crMatchInstList">
+          {% for institution in institutions %}
+            {% include "careers/partials/institution_card.html" %}
+          {% empty %}
+          <p style="font-size:0.82rem;opacity:0.45;">No institutions listed yet.</p>
+          {% endfor %}
+        </div>
+        {% if institutions|length > 4 %}
+          <button class="btn-ghost" id="crShowMoreInst" type="button"
+                  style="width:100%;margin-top:10px;font-size:0.8rem;">
+            Show more
+          </button>
+        {% endif %}
+      </section>
+
+      <!-- Quick stats card -->
+      <div style="background:var(--color-card);border:1px solid var(--color-border);border-radius:16px;padding:18px;">
+        <h2 class="cr-section-title" style="margin-bottom:14px;font-size:0.95rem;">Quick Stats</h2>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;font-size:0.82rem;">
+            <span style="opacity:0.55;">Sector</span>
+            <strong>{{ career.sector|default:"—" }}</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.82rem;">
+            <span style="opacity:0.55;">Courses available</span>
+            <strong>{{ recommended_courses|length|default:"—" }}</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.82rem;">
+            <span style="opacity:0.55;">Institutions</span>
+            <strong>{{ institutions|length|default:"—" }}</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.82rem;">
+            <span style="opacity:0.55;">Match score</span>
+            <strong style="color:var(--color-primary);">{{ match_pct|default:"—" }}{% if match_pct %}%{% endif %}</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div style="background:color-mix(in srgb, var(--color-primary) 8%, transparent);
+                  border:1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+                  border-radius:16px;padding:18px;text-align:center;">
+        <p style="font-size:0.82rem;font-weight:600;margin:0 0 10px;">Improve your match</p>
+        <p style="font-size:0.76rem;opacity:0.6;margin:0 0 14px;line-height:1.5;">
+          Take more assessments to refine your career recommendations.
+        </p>
+        <a href="{% url 'user_questionnares' %}" class="btn-primary"
+           style="font-size:0.82rem;padding:9px 18px;text-decoration:none;display:inline-block;">
+          Take Assessment
+        </a>
+      </div>
+
+    </aside>
+  </div><!-- /match grid -->
+
+</div><!-- /careers-page -->
+
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'careers/js/career_match.js' %}"></script>
+{% endblock %}

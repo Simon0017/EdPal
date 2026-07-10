@@ -1,0 +1,278 @@
+{% extends "core/user_nav.html" %}
+{% load static %}
+
+{% block title %}Explore — EdPal Careers{% endblock %}
+{% block nav_careers_explore %}un-nav__item--active{% endblock %}
+{% block nav_careers_explore_aria %}aria-current="page"{% endblock %}>
+
+{% block breadcrumbs %}
+  <a href="{% url 'user_dashboard' %}"  class="un-breadcrumbs__item">Dashboard</a>
+  <span class="un-breadcrumbs__sep">/</span>
+  <a href="{% url 'careers_dashboard' %}" class="un-breadcrumbs__item">Careers</a>
+  <span class="un-breadcrumbs__sep">/</span>
+  <span class="un-breadcrumbs__item un-breadcrumbs__item--current">Explore</span>
+{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'careers/css/careers.css' %}" />
+{% endblock %}
+
+{% block content %}
+<script>
+  window.CR_URLS = {
+    searchAPI:    "{% url 'search_careers' %}",
+    careerList:   "{% url 'careers_explore' %}",
+    careerDetail: "/careers/",      //{# append slug #}
+    careerMatch:  "{% url 'careers_match' %}",
+  };
+
+  /* Server-side data for JS hydration.
+     The view should serialise these querysets to JSON and pass them in context. */
+  // window.CR_DATA = {
+  //   careers:      {{ careers_json|default:"[]"|safe }},
+  //   courses:      {{ courses_json|default:"[]"|safe }},
+  //   institutions: {{ institutions_json|default:"[]"|safe }},
+  //   sectors:      {{ sectors_json|default:"[]"|safe }},
+  //   qualifications: {{ qualifications_json|default:"[]"|safe }},
+  //   countries:    {{ countries_json|default:"[]"|safe }},
+  // };
+</script>
+<form id="crCsrfForm" class="hidden">{% csrf_token %}</form>
+
+<div class="careers-page">
+
+  <!-- Page title -->
+  <div style="margin-bottom:20px;">
+    <h1 style="font-family:var(--font-display),sans-serif;font-size:clamp(1.3rem,3vw,1.8rem);
+               font-weight:800;letter-spacing:-0.01em;margin:0 0 4px;">
+      Explore
+    </h1>
+    <p style="font-size:0.88rem;opacity:0.5;margin:0;">
+      Browse careers, courses, and institutions. Filter and discover what fits you.
+    </p>
+  </div>
+
+  <!-- Sticky toolbar -->
+  <div class="cr-toolbar" role="search" aria-label="Explore search and filters">
+    <div class="cr-toolbar__row">
+      <!-- Search -->
+      <div class="cr-search-wrap cr-toolbar__search">
+        <svg class="cr-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+             aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input class="form-input cr-search"
+               type="search"
+               id="crExploreSearch"
+               placeholder="Search careers, courses, institutions…"
+               aria-label="Search" />
+      </div>
+
+      <!-- Filter drawer trigger -->
+      <button class="btn-outline" id="crFilterBtn" type="button"
+              aria-haspopup="true" aria-expanded="false" aria-controls="crFilterDrawer"
+              style="display:flex;align-items:center;gap:7px;white-space:nowrap;padding:9px 16px;font-size:0.82rem;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="4" y1="6"  x2="20" y2="6"/>
+          <line x1="8" y1="12" x2="16" y2="12"/>
+          <line x1="11" y1="18" x2="13" y2="18"/>
+        </svg>
+        Filters
+        <span class="cr-badge cr-badge--primary" id="crActiveFilterCount" style="display:none;">0</span>
+      </button>
+    </div>
+
+    <!-- Active filter chips -->
+    <div class="cr-chips" id="crActiveChips" aria-live="polite" aria-label="Active filters"></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="cr-tabs" role="tablist" aria-label="Explore categories" id="crExploreTabs">
+    <button class="cr-tab cr-tab--active" role="tab" data-tab="careers"
+            id="cr-tab-careers" aria-selected="true" aria-controls="cr-panel-careers" type="button">
+      Careers
+    </button>
+    <button class="cr-tab" role="tab" data-tab="courses"
+            id="cr-tab-courses" aria-selected="false" aria-controls="cr-panel-courses" type="button">
+      Courses
+    </button>
+    <button class="cr-tab" role="tab" data-tab="institutions"
+            id="cr-tab-institutions" aria-selected="false" aria-controls="cr-panel-institutions" type="button">
+      Institutions
+    </button>
+  </div>
+
+  <!-- CAREERS PANEL -->
+  <section id="cr-panel-careers" role="tabpanel" aria-labelledby="cr-tab-careers" tabindex="0">
+
+    <!-- Sector filter chips -->
+    <div class="cr-chips" id="crSectorChips" style="margin-bottom:16px;" aria-label="Filter by sector">
+      <button class="cr-chip cr-chip--active" data-sector="" type="button">All</button>
+      {% for sector in sectors %}
+      <button class="cr-chip" data-sector="{{ sector }}" type="button">{{ sector }}</button>
+      {% endfor %}
+    </div>
+
+    <!-- Grid -->
+    <div class="cr-grid cr-grid--3" id="crCareersGrid" aria-live="polite" aria-label="Careers list">
+      {% for career in careers %}
+        {% include "careers/partials/career_card.html" %}
+      {% empty %}
+        {# Skeletons — JS will replace or reveal real cards #}
+        {% for _ in "123456" %}
+        <div class="cr-skeleton-card" aria-hidden="true">
+          <div class="cr-skeleton" style="width:40px;height:40px;border-radius:10px;"></div>
+          <div class="cr-skeleton" style="width:70%;"></div>
+          <div class="cr-skeleton" style="width:100%;"></div>
+          <div class="cr-skeleton" style="width:55%;"></div>
+        </div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+
+    <div class="cr-empty" id="crCareersEmpty" style="display:none;" role="status">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <p>No careers match your filters.</p>
+      <button class="btn-outline" id="crClearCareerFilters" type="button"
+              style="margin-top:8px;font-size:0.82rem;">Clear Filters</button>
+    </div>
+
+    <div class="cr-pagination" id="crCareersPagination" aria-label="Careers pagination"></div>
+  </section>
+
+  <!-- COURSES PANEL -->
+  <section id="cr-panel-courses" role="tabpanel" aria-labelledby="cr-tab-courses" tabindex="0" hidden>
+
+    <!-- Qualification filter chips -->
+    <div class="cr-chips" id="crQualChips" style="margin-bottom:16px;" aria-label="Filter by qualification">
+      <button class="cr-chip cr-chip--active" data-qual="" type="button">All</button>
+      {% for qual in qualifications %}
+      <button class="cr-chip" data-qual="{{ qual }}" type="button">{{ qual }}</button>
+      {% endfor %}
+    </div>
+
+    <div class="cr-grid cr-grid--4" id="crCoursesGrid" aria-live="polite" aria-label="Courses list">
+      {% for course in courses %}
+        {% include "careers/partials/course_card.html" %}
+      {% empty %}
+        {% for _ in "12345678" %}
+        <div class="cr-skeleton-card" aria-hidden="true">
+          <div class="cr-skeleton" style="width:50%;height:10px;"></div>
+          <div class="cr-skeleton" style="width:80%;height:14px;"></div>
+          <div class="cr-skeleton" style="width:60%;height:10px;"></div>
+        </div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+
+    <div class="cr-empty" id="crCoursesEmpty" style="display:none;" role="status">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14,2 14,8 20,8"/>
+      </svg>
+      <p>No courses match your filters.</p>
+    </div>
+
+    <div class="cr-pagination" id="crCoursesPagination" aria-label="Courses pagination"></div>
+  </section>
+
+  <!-- INSTITUTIONS PANEL -->
+  <section id="cr-panel-institutions" role="tabpanel" aria-labelledby="cr-tab-institutions" tabindex="0" hidden>
+
+    <!-- Country filter chips -->
+    <div class="cr-chips" id="crCountryChips" style="margin-bottom:16px;" aria-label="Filter by country">
+      <button class="cr-chip cr-chip--active" data-country="" type="button">All</button>
+      {% for country in countries %}
+      <button class="cr-chip" data-country="{{ country }}" type="button">{{ country }}</button>
+      {% endfor %}
+    </div>
+
+    <div class="cr-grid cr-grid--3" id="crInstitutionsGrid" aria-live="polite" aria-label="Institutions list">
+      {% for institution in institutions %}
+        {% include "careers/partials/institution_card.html" %}
+      {% empty %}
+        {% for _ in "123456" %}
+        <div class="cr-skeleton-card" aria-hidden="true">
+          <div class="cr-skeleton" style="width:44px;height:44px;border-radius:10px;"></div>
+          <div class="cr-skeleton" style="width:65%;height:13px;"></div>
+          <div class="cr-skeleton" style="width:45%;height:10px;"></div>
+        </div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+
+    <div class="cr-empty" id="crInstitutionsEmpty" style="display:none;" role="status">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="10" width="18" height="11" rx="2"/>
+        <path d="M12 2L2 10h20L12 2z"/>
+      </svg>
+      <p>No institutions match your filters.</p>
+    </div>
+
+    <div class="cr-pagination" id="crInstitutionsPagination" aria-label="Institutions pagination"></div>
+  </section>
+
+</div><!-- /careers-page -->
+
+<!-- Career detail modal (populated by JS on card click) -->
+{% include "careers/partials/modal.html" with modal_id="crCareerModal" %}
+
+<!-- Filter drawer -->
+{% include "careers/partials/drawer.html" with drawer_id="crFilterDrawer" drawer_title="Filter" %}
+
+<!-- Filter drawer body (inside the drawer) -->
+<script>
+  /* Inject filter drawer body after DOM ready — keeps template clean */
+  document.addEventListener('DOMContentLoaded', function () {
+    const body = document.getElementById('crFilterDrawer-body');
+    if (!body) return;
+    body.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:20px;">
+        <div>
+          <p style="font-size:0.72rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;opacity:0.5;margin:0 0 8px;">Sector</p>
+          <div class="cr-chips" id="crDrawerSector">
+            <button class="cr-chip cr-chip--active" data-sector="" type="button">All</button>
+            ${(window.CR_DATA.sectors || []).map(s =>
+              `<button class="cr-chip" data-sector="${s}" type="button">${s}</button>`
+            ).join('')}
+          </div>
+        </div>
+        <div>
+          <p style="font-size:0.72rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;opacity:0.5;margin:0 0 8px;">Qualification</p>
+          <div class="cr-chips" id="crDrawerQual">
+            <button class="cr-chip cr-chip--active" data-qual="" type="button">All</button>
+            ${(window.CR_DATA.qualifications || []).map(q =>
+              `<button class="cr-chip" data-qual="${q}" type="button">${q}</button>`
+            ).join('')}
+          </div>
+        </div>
+        <div>
+          <p style="font-size:0.72rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;opacity:0.5;margin:0 0 8px;">Country</p>
+          <div class="cr-chips" id="crDrawerCountry">
+            <button class="cr-chip cr-chip--active" data-country="" type="button">All</button>
+            ${(window.CR_DATA.countries || []).map(c =>
+              `<button class="cr-chip" data-country="${c}" type="button">${c}</button>`
+            ).join('')}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;padding-top:8px;">
+          <button class="btn-primary" id="crDrawerApply" type="button" style="flex:1;">Apply Filters</button>
+          <button class="btn-ghost"   id="crDrawerReset"  type="button">Reset</button>
+        </div>
+      </div>
+    `;
+  });
+</script>
+
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'careers/js/explore.js' %}"></script>
+{% endblock %}

@@ -6,6 +6,9 @@ from django.db.models import Q
 from rest_framework import status
 from django.views.decorators.http import require_GET
 from core.decorators import outer_exception_handler
+from django.views import View
+from django.utils.decorators import method_decorator
+from django.contrib.auth.decorators import login_required
 
 logger = logging.getLogger(__name__)
 
@@ -39,3 +42,69 @@ def search_careers_re(request:HttpRequest):
             "success": False,
             "error": str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+'''
+CBV(S)
+'''
+
+@method_decorator(login_required,name="dispatch")
+@method_decorator(outer_exception_handler(logger),name="dispatch")
+class  CareersDashboardView(View):
+    template_name = "careers/dashboard.html"
+    
+    def get(self,request:HttpRequest,*args,**kwargs):
+        return render(request,self.template_name)
+    
+
+
+@method_decorator(login_required,name="dispatch")
+@method_decorator(outer_exception_handler(logger),name="dispatch")
+class  CareersExploreView(View):
+    template_name = "careers/explore.html"
+    
+    def get(self,request:HttpRequest,*args,**kwargs):
+        return render(request,self.template_name)
+
+
+@method_decorator(login_required,name="dispatch")
+@method_decorator(outer_exception_handler(logger),name="dispatch")
+class  CareerMatchView(View):
+    template_name = "careers/career_match.html"
+    
+    def get(self,request:HttpRequest,*args,**kwargs):
+        return render(request,self.template_name)
+
+
+@method_decorator(login_required,name="dispatch")
+@method_decorator(outer_exception_handler(logger),name="dispatch")
+class  CareerDetailView(View):
+    
+    def get(self,request:HttpRequest,*args,**kwargs):
+        return JsonResponse(
+            {
+                "success":True
+            },status=status.HTTP_200_OK
+        )
+    
+@method_decorator(login_required,name="dispatch")
+@method_decorator(outer_exception_handler(logger),name="dispatch")
+class  CourseDetailView(View):
+    
+    def get(self,request:HttpRequest,*args,**kwargs):
+        return JsonResponse(
+            {
+                "success":True
+            },status=status.HTTP_200_OK
+        )
+    
+@method_decorator(login_required,name="dispatch")
+@method_decorator(outer_exception_handler(logger),name="dispatch")
+class  InstitutionDetailView(View):
+    
+    def get(self,request:HttpRequest,*args,**kwargs):
+        return JsonResponse(
+            {
+                "success":True
+            },status=status.HTTP_200_OK
+        )

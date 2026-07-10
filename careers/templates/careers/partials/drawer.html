@@ -1,0 +1,26 @@
+
+<div class="cr-drawer-backdrop hidden" id="{{ drawer_id }}-backdrop" aria-hidden="true"></div>
+
+<aside class="cr-drawer"
+       id="{{ drawer_id }}"
+       role="complementary"
+       aria-label="{{ drawer_title|default:'Drawer' }}"
+       aria-hidden="true">
+  <div class="cr-drawer__header">
+    <h2 class="cr-drawer__title">{{ drawer_title|default:"Options" }}</h2>
+    <button class="cr-drawer__close"
+            data-cr-drawer-close="{{ drawer_id }}"
+            aria-label="Close {{ drawer_title|default:'drawer' }}"
+            type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+           aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6"  y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  <div id="{{ drawer_id }}-body">
+    {% block drawer_body %}{% endblock %}
+  </div>
+</aside>

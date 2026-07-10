@@ -1,0 +1,45 @@
+<!-- {# careers/partials/subject_table.html
+   Context variables:
+     subject_requirements  — queryset/list of SubjectRequirement objects
+       .subject, .requirement_type (MANDATORY/OPTIONAL), .minimum_grade
+#} -->
+<div class="cr-table-wrap">
+  <table class="cr-table" aria-label="Subject requirements">
+    <thead>
+      <tr>
+        <th scope="col">Subject</th>
+        <th scope="col">Requirement</th>
+        <th scope="col">Minimum Grade</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for req in subject_requirements %}
+      <tr>
+        <td>{{ req.subject }}</td>
+        <td>
+          {% if req.requirement_type == 'MANDATORY' %}
+            <span class="cr-badge cr-badge--primary">Mandatory</span>
+          {% else %}
+            <span class="cr-badge cr-badge--muted">Optional</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if req.minimum_grade %}
+            <span class="cr-badge cr-badge--info">{{ req.minimum_grade }}</span>
+          {% else %}
+            <span style="opacity:0.4;">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="3">
+          <div class="cr-empty" style="padding:28px 16px;">
+            <p>No subject requirements listed.</p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

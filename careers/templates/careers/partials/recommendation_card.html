@@ -1,0 +1,32 @@
+<!-- {# careers/partials/recommendation_card.html
+   Context variables:
+     rec.career.title, rec.career.slug, rec.career.sector
+     rec.rank  (integer)
+     rec.match_pct (0–100)
+     rec.reason (optional string)
+#} -->
+<a href="{% url 'career-match' rec.career.slug %}"
+   class="cr-rec-card"
+   aria-label="{{ rec.career.title }} — {{ rec.match_pct }}% match">
+
+  <div class="cr-rec-card__glow" aria-hidden="true"></div>
+
+  <span class="cr-rec-card__rank">#{{ rec.rank }} Recommendation</span>
+
+  <h3 class="cr-rec-card__title">{{ rec.career.title }}</h3>
+
+  <p style="font-size:0.78rem;opacity:0.55;margin:0;">{{ rec.career.sector }}</p>
+
+  {% if rec.reason %}
+    <p style="font-size:0.8rem;opacity:0.65;margin:0;line-height:1.55;">{{ rec.reason }}</p>
+  {% endif %}
+
+  <div class="cr-rec-card__match">
+    <div class="cr-rec-card__match-bar" role="progressbar"
+         aria-valuenow="{{ rec.match_pct }}" aria-valuemin="0" aria-valuemax="100"
+         aria-label="{{ rec.career.title }} match percentage">
+      <div class="cr-rec-card__match-fill" data-pct="{{ rec.match_pct }}"></div>
+    </div>
+    <span class="cr-rec-card__match-pct">{{ rec.match_pct }}%</span>
+  </div>
+</a>

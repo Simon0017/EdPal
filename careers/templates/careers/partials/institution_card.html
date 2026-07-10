@@ -1,0 +1,23 @@
+<!-- {# careers/partials/institution_card.html
+   Context variables:
+     institution.name, institution.slug, institution.code
+     institution.type, institution.country, institution.website
+     institution.course_count (optional)
+#} -->
+<a href="{% url 'institution_detail' institution.slug %}"
+   class="cr-inst-card"
+   aria-label="{{ institution.name }}">
+
+  <div class="cr-inst-card__logo" aria-hidden="true">
+    {{ institution.code|slice:":2"|upper }}
+  </div>
+
+  <div>
+    <p class="cr-inst-card__name">{{ institution.name }}</p>
+    <p class="cr-inst-card__meta">
+      {{ institution.type }}
+      {% if institution.country %}&nbsp;&middot;&nbsp;{{ institution.country }}{% endif %}
+      {% if institution.course_count %}&nbsp;&middot;&nbsp;{{ institution.course_count }} course{{ institution.course_count|pluralize }}{% endif %}
+    </p>
+  </div>
+</a>

@@ -1,0 +1,42 @@
+<!-- {# careers/partials/cutoff_table.html
+   Context variables:
+     cutoff_clusters — queryset/list of CutoffCluster objects
+       .cluster_number, .cutoff_points, .year
+#} -->
+<div class="cr-table-wrap">
+  <table class="cr-table" aria-label="Cutoff points history">
+    <thead>
+      <tr>
+        <th scope="col">Year</th>
+        <th scope="col">Cluster</th>
+        <th scope="col">Cutoff Points</th>
+        <th scope="col">Trend</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for cluster in cutoff_clusters %}
+      <tr>
+        <td>{{ cluster.year }}</td>
+        <td>
+          <span class="cr-badge cr-badge--muted">Cluster {{ cluster.cluster_number }}</span>
+        </td>
+        <td>
+          <strong style="font-family:var(--font-mono),monospace;">{{ cluster.cutoff_points }}</strong>
+        </td>
+        <td>
+          {# Trend icon injected by JS using data-cutoff-row attribute #}
+          <span class="cr-cutoff-trend" data-cutoff-row="{{ forloop.counter }}" aria-hidden="true">—</span>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4">
+          <div class="cr-empty" style="padding:28px 16px;">
+            <p>No cutoff data available.</p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

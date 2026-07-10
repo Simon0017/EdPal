@@ -1,0 +1,35 @@
+<!-- {# careers/partials/career_card.html
+   Context variables:
+     career.title, career.slug, career.sector, career.description
+     career.course_count (optional)
+     career.match_pct    (optional — shows match badge)
+#} -->
+<a href= "{% url 'career_detail' career.slug %}"
+   class="cr-card"
+   aria-label="{{ career.title }} — {{ career.sector }}">
+  <div class="cr-card__sector-bar" aria-hidden="true"></div>
+
+  <div class="cr-card__icon" aria-hidden="true">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2"/>
+      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+    </svg>
+  </div>
+
+  <h3 class="cr-card__title">{{ career.title }}</h3>
+
+  {% if career.description %}
+    <p class="cr-card__desc">{{ career.description }}</p>
+  {% endif %}
+
+  <div class="cr-card__meta">
+    <span class="cr-badge cr-badge--muted">{{ career.sector }}</span>
+    {% if career.course_count %}
+      <span class="cr-badge cr-badge--info">{{ career.course_count }} course{{ career.course_count|pluralize }}</span>
+    {% endif %}
+    {% if career.match_pct %}
+      <span class="cr-badge cr-badge--primary">{{ career.match_pct }}% match</span>
+    {% endif %}
+  </div>
+</a>

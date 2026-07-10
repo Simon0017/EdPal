@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PAL — Learn Together, Grow Together</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav" id="nav">
+    <a href="#" class="nav-logo">PAL<span class="logo-dot">.</span></a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#courses">Courses</a>
+      <a href="#collab">Collab</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <div class="nav-actions">
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <span class="toggle-track">
+          <span class="toggle-thumb"></span>
+          <span class="icon-sun">☀</span>
+          <span class="icon-moon">◑</span>
+        </span>
+      </button>
+      <a href="#" class="btn-ghost">Log in</a>
+      <a href="#" class="btn-primary">Join free</a>
+    </div>
+    <button class="nav-burger" id="navBurger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#features">Features</a>
+    <a href="#courses">Courses</a>
+    <a href="#collab">Collab</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#" class="btn-ghost">Log in</a>
+    <a href="#" class="btn-primary">Join free</a>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <div class="hero-bg">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+      <div class="grid-lines"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        <span>300k+ students learning right now</span>
+      </div>
+      <h1 class="hero-title">
+        <span class="title-line reveal-up">Learn without</span>
+        <span class="title-line reveal-up delay-1">limits.<em> Together.</em></span>
+      </h1>
+      <p class="hero-sub reveal-up delay-2">
+        PAL is your all-in-one learning universe — live classes, collab sessions,
+        video calls, and courses that actually slap. No cap.
+      </p>
+      <div class="hero-cta reveal-up delay-3">
+        <a href="#" class="btn-primary btn-lg">Start for free</a>
+        <a href="#" class="btn-outline btn-lg">
+          <span class="play-icon">▶</span> Watch how it works
+        </a>
+      </div>
+      <div class="hero-avatars reveal-up delay-4">
+        <div class="avatars">
+          <div class="av" style="background: #ff6b6b;">A</div>
+          <div class="av" style="background: #ffd93d;">K</div>
+          <div class="av" style="background: #6bcb77;">Z</div>
+          <div class="av" style="background: #4d96ff;">T</div>
+          <div class="av" style="background: #c77dff;">M</div>
+        </div>
+        <p>Joined by <strong>1.2M</strong> students across 90+ countries</p>
+      </div>
+    </div>
+    <div class="hero-visual reveal-right delay-2">
+      <div class="dashboard-card">
+        <div class="dash-header">
+          <div class="dash-dots"><span></span><span></span><span></span></div>
+          <span class="dash-title">PAL Dashboard</span>
+        </div>
+        <div class="dash-live">
+          <div class="live-pill"><span class="live-blink"></span>LIVE</div>
+          <div class="live-info">
+            <strong>UI Design Masterclass</strong>
+            <small>with Ms. Amara · 847 joined</small>
+          </div>
+        </div>
+        <div class="dash-grid">
+          <div class="dash-stat">
+            <span class="stat-num">12</span>
+            <span class="stat-label">Courses</span>
+          </div>
+          <div class="dash-stat">
+            <span class="stat-num">4.8★</span>
+            <span class="stat-label">Avg Rating</span>
+          </div>
+          <div class="dash-stat">
+            <span class="stat-num">92%</span>
+            <span class="stat-label">Completion</span>
+          </div>
+        </div>
+        <div class="dash-progress-wrap">
+          <div class="progress-label">
+            <span>Python Basics</span><span>68%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:68%"></div></div>
+        </div>
+        <div class="dash-progress-wrap">
+          <div class="progress-label">
+            <span>Data Science 101</span><span>34%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill accent2" style="width:34%"></div></div>
+        </div>
+        <div class="dash-classmates">
+          <p class="classmates-label">Online classmates</p>
+          <div class="classmates-row">
+            <div class="cm-av" style="background:#ff6b6b">J</div>
+            <div class="cm-av" style="background:#ffd93d">P</div>
+            <div class="cm-av" style="background:#6bcb77">L</div>
+            <div class="cm-av" style="background:#4d96ff">R</div>
+            <span class="cm-more">+24</span>
+          </div>
+        </div>
+      </div>
+      <!-- floating chips -->
+      <div class="float-chip chip-1">🎯 New: AI Tutor</div>
+      <div class="float-chip chip-2">🔥 Trending</div>
+      <div class="float-chip chip-3">📹 Video Call</div>
+    </div>
+  </section>
+
+  <!-- MARQUEE STRIP -->
+  <div class="marquee-strip">
+    <div class="marquee-track">
+      <span>Online Courses</span><span class="sep">✦</span>
+      <span>Live Classrooms</span><span class="sep">✦</span>
+      <span>Video Calls</span><span class="sep">✦</span>
+      <span>Collaboration Tools</span><span class="sep">✦</span>
+      <span>AI Tutor</span><span class="sep">✦</span>
+      <span>Study Groups</span><span class="sep">✦</span>
+      <span>Certificates</span><span class="sep">✦</span>
+      <span>Discussion Boards</span><span class="sep">✦</span>
+      <span>Online Courses</span><span class="sep">✦</span>
+      <span>Live Classrooms</span><span class="sep">✦</span>
+      <span>Video Calls</span><span class="sep">✦</span>
+      <span>Collaboration Tools</span><span class="sep">✦</span>
+      <span>AI Tutor</span><span class="sep">✦</span>
+      <span>Study Groups</span><span class="sep">✦</span>
+      <span>Certificates</span><span class="sep">✦</span>
+      <span>Discussion Boards</span><span class="sep">✦</span>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="section-label">What PAL offers</div>
+    <h2 class="section-title">Everything you need<br />to <em>level up</em></h2>
+    <div class="features-grid">
+      <div class="feat-card feat-big">
+        <div class="feat-icon">🎓</div>
+        <h3>Online Courses</h3>
+        <p>Self-paced or live — hundreds of courses across tech, design, business, and creative arts. Made by educators who actually get Gen Z.</p>
+        <div class="feat-tag-row">
+          <span class="feat-tag">700+ courses</span>
+          <span class="feat-tag">Verified certs</span>
+        </div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📡</div>
+        <h3>Live Classrooms</h3>
+        <p>Real-time sessions with interactive boards, polls, and Q&As. Feel the energy of a real class, from anywhere.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📹</div>
+        <h3>Video Calls & Conferences</h3>
+        <p>Crystal-clear video meetings. Host study sessions, group presentations, or 1-on-1 tutoring — all built-in.</p>
+      </div>
+      <div class="feat-card feat-highlight">
+        <div class="feat-icon">⚡</div>
+        <h3>Collaboration Suite</h3>
+        <p>Co-edit notes, share screens, drop files, and brainstorm on shared whiteboards. Team projects just got easier.</p>
+        <div class="feat-tag-row">
+          <span class="feat-tag">Whiteboard</span>
+          <span class="feat-tag">Co-editing</span>
+          <span class="feat-tag">File share</span>
+        </div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🤖</div>
+        <h3>AI Tutor</h3>
+        <p>Stuck on a concept? PAL's AI explains it 10 different ways until it clicks. Your personal tutor, always available.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🏆</div>
+        <h3>Leaderboards & XP</h3>
+        <p>Earn XP, unlock badges, and climb the leaderboard. Learning feels like a game — because it should.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- COURSES SHOWCASE -->
+  <section class="courses" id="courses">
+    <div class="section-label">Popular right now</div>
+    <h2 class="section-title">Courses that <em>actually slap</em></h2>
+    <div class="course-tabs" id="courseTabs">
+      <button class="tab active" data-cat="all">All</button>
+      <button class="tab" data-cat="tech">Tech</button>
+      <button class="tab" data-cat="design">Design</button>
+      <button class="tab" data-cat="business">Business</button>
+      <button class="tab" data-cat="creative">Creative</button>
+    </div>
+    <div class="courses-grid" id="coursesGrid">
+      <!-- injected by JS -->
+    </div>
+    <div class="courses-cta">
+      <a href="#" class="btn-outline">Browse all courses →</a>
+    </div>
+  </section>
+
+  <!-- COLLAB SECTION -->
+  <section class="collab" id="collab">
+    <div class="collab-inner">
+      <div class="collab-text">
+        <div class="section-label">Built for collaboration</div>
+        <h2 class="section-title">Study solo<br />or <em>squad up</em></h2>
+        <p class="collab-sub">PAL's collaboration tools turn solo studying into a group vibe. Share notes in real time, jump on a quick video call, drop thoughts in discussion threads, and get it done — together.</p>
+        <ul class="collab-list">
+          <li><span class="check">✓</span> Real-time document co-editing</li>
+          <li><span class="check">✓</span> Shared whiteboards & mind maps</li>
+          <li><span class="check">✓</span> Group video rooms (up to 100 people)</li>
+          <li><span class="check">✓</span> Class discussion boards & threads</li>
+          <li><span class="check">✓</span> Instant file & resource sharing</li>
+          <li><span class="check">✓</span> Study group scheduler</li>
+        </ul>
+        <a href="#" class="btn-primary">Try Collab tools</a>
+      </div>
+      <div class="collab-visual">
+        <div class="vcall-card">
+          <div class="vcall-header">
+            <span class="vcall-title">Study Group · Math Finals Prep</span>
+            <span class="vcall-live"><span class="live-blink"></span>4 in call</span>
+          </div>
+          <div class="vcall-grid">
+            <div class="vcall-tile" style="--c:#ff6b6b">
+              <span class="vcall-initial">A</span>
+              <span class="vcall-name">Amara</span>
+              <div class="vcall-mic">🎙</div>
+            </div>
+            <div class="vcall-tile" style="--c:#ffd93d">
+              <span class="vcall-initial">K</span>
+              <span class="vcall-name">Kira</span>
+              <div class="vcall-mic muted">🔇</div>
+            </div>
+            <div class="vcall-tile you" style="--c:#4d96ff">
+              <span class="vcall-initial">Y</span>
+              <span class="vcall-name">You</span>
+              <div class="vcall-mic">🎙</div>
+            </div>
+            <div class="vcall-tile" style="--c:#6bcb77">
+              <span class="vcall-initial">D</span>
+              <span class="vcall-name">Dev</span>
+              <div class="vcall-mic muted">🔇</div>
+            </div>
+          </div>
+          <div class="vcall-controls">
+            <button class="vc-btn active">🎙</button>
+            <button class="vc-btn">📹</button>
+            <button class="vc-btn">🖥</button>
+            <button class="vc-btn">💬</button>
+            <button class="vc-btn end">✕ End</button>
+          </div>
+          <div class="vcall-chat">
+            <div class="chat-msg"><strong>Kira:</strong> can we go over integrals again?</div>
+            <div class="chat-msg"><strong>Dev:</strong> yes pls 😭</div>
+            <div class="chat-msg you-msg"><strong>You:</strong> sharing screen now!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS STRIP -->
+  <section class="stats-strip">
+    <div class="stat-item">
+      <span class="stat-big" data-target="1200000">0</span>
+      <span class="stat-desc">Active Students</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <span class="stat-big" data-target="700">0</span>
+      <span class="stat-desc">Courses Available</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <span class="stat-big" data-target="92">0</span>
+      <span class="stat-desc">% Completion Rate</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <span class="stat-big" data-target="98">0</span>
+      <span class="stat-desc">% Student Satisfaction</span>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="testimonials">
+    <div class="section-label">Real talk</div>
+    <h2 class="section-title">Students <em>love</em> PAL</h2>
+    <div class="testi-track-wrap">
+      <div class="testi-track" id="testiTrack">
+        <div class="testi-card">
+          <div class="testi-stars">★★★★★</div>
+          <p>"PAL literally saved my grades. The live sessions are fire and the AI tutor explains things in a way my teacher never could lol."</p>
+          <div class="testi-author">
+            <div class="testi-av" style="background:#ff6b6b">J</div>
+            <div><strong>Jade M.</strong><small>16, Kenya</small></div>
+          </div>
+        </div>
+        <div class="testi-card">
+          <div class="testi-stars">★★★★★</div>
+          <p>"The collab features are insane. Me and my study group use PAL daily — we edit notes together and hop on video calls whenever. 10/10."</p>
+          <div class="testi-author">
+            <div class="testi-av" style="background:#4d96ff">R</div>
+            <div><strong>Ravi S.</strong><small>19, India</small></div>
+          </div>
+        </div>
+        <div class="testi-card">
+          <div class="testi-stars">★★★★★</div>
+          <p>"I finished a UI Design course in 3 weeks and landed my first freelance gig. No cap, PAL changed my life fr fr."</p>
+          <div class="testi-author">
+            <div class="testi-av" style="background:#c77dff">Z</div>
+            <div><strong>Zara T.</strong><small>21, UK</small></div>
+          </div>
+        </div>
+        <div class="testi-card">
+          <div class="testi-stars">★★★★★</div>
+          <p>"The gamification is addicting in the best way. XP, badges, leaderboards — I look forward to studying every day now which is crazy."</p>
+          <div class="testi-author">
+            <div class="testi-av" style="background:#ffd93d">K</div>
+            <div><strong>Kwame O.</strong><small>17, Ghana</small></div>
+          </div>
+        </div>
+        <div class="testi-card">
+          <div class="testi-stars">★★★★★</div>
+          <p>"Best investment I've made this year. The video conferencing for live classes is smooth af and the courses are actually fun."</p>
+          <div class="testi-author">
+            <div class="testi-av" style="background:#6bcb77">L</div>
+            <div><strong>Lena P.</strong><small>23, Brazil</small></div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-controls">
+        <button id="testiPrev" class="testi-btn">←</button>
+        <button id="testiNext" class="testi-btn">→</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="pricing" id="pricing">
+    <div class="section-label">Simple pricing</div>
+    <h2 class="section-title">Pick your <em>plan</em></h2>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-tier">Free</div>
+        <div class="price-amount"><sup>$</sup>0<sub>/mo</sub></div>
+        <p class="price-desc">Perfect to get started and explore PAL.</p>
+        <ul class="price-features">
+          <li><span class="check">✓</span> 10 free courses</li>
+          <li><span class="check">✓</span> Join live classrooms</li>
+          <li><span class="check">✓</span> Video calls (up to 4 people)</li>
+          <li><span class="check">✓</span> Basic collaboration tools</li>
+          <li class="dim"><span>✕</span> AI Tutor</li>
+          <li class="dim"><span>✕</span> Certificates</li>
+        </ul>
+        <a href="#" class="btn-outline btn-full">Get started</a>
+      </div>
+      <div class="price-card featured">
+        <div class="popular-badge">Most Popular 🔥</div>
+        <div class="price-tier">Pro</div>
+        <div class="price-amount"><sup>$</sup>9<sub>/mo</sub></div>
+        <p class="price-desc">Everything you need to go from zero to hero.</p>
+        <ul class="price-features">
+          <li><span class="check">✓</span> All 700+ courses</li>
+          <li><span class="check">✓</span> Unlimited live classrooms</li>
+          <li><span class="check">✓</span> Video calls (up to 50 people)</li>
+          <li><span class="check">✓</span> Full collaboration suite</li>
+          <li><span class="check">✓</span> AI Tutor (unlimited)</li>
+          <li><span class="check">✓</span> Verified certificates</li>
+        </ul>
+        <a href="#" class="btn-primary btn-full">Start Pro free trial</a>
+      </div>
+      <div class="price-card">
+        <div class="price-tier">Campus</div>
+        <div class="price-amount"><sup>$</sup>29<sub>/mo</sub></div>
+        <p class="price-desc">For schools, study groups & institutions.</p>
+        <ul class="price-features">
+          <li><span class="check">✓</span> Everything in Pro</li>
+          <li><span class="check">✓</span> Video conferences (100+ people)</li>
+          <li><span class="check">✓</span> Admin & analytics dashboard</li>
+          <li><span class="check">✓</span> Custom branding</li>
+          <li><span class="check">✓</span> Priority support</li>
+          <li><span class="check">✓</span> LMS integration</li>
+        </ul>
+        <a href="#" class="btn-outline btn-full">Contact us</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="final-cta">
+    <div class="cta-orb"></div>
+    <div class="section-label">Ready?</div>
+    <h2 class="cta-title">Your future self<br />is waiting on <em>you</em>.</h2>
+    <p class="cta-sub">Join over a million students already using PAL to learn, connect, and grow. It's free to start — no credit card needed.</p>
+    <a href="#" class="btn-primary btn-xl">Join PAL for free</a>
+    <p class="cta-small">Takes 30 seconds. No credit card required.</p>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="#" class="nav-logo">PAL<span class="logo-dot">.</span></a>
+        <p>Learning without limits. Together.</p>
+        <div class="footer-socials">
+          <a href="#">ig</a>
+          <a href="#">tt</a>
+          <a href="#">tw</a>
+          <a href="#">yt</a>
+        </div>
+      </div>
+      <div class="footer-links-group">
+        <h4>Product</h4>
+        <a href="#">Features</a>
+        <a href="#">Courses</a>
+        <a href="#">Live Classes</a>
+        <a href="#">Pricing</a>
+      </div>
+      <div class="footer-links-group">
+        <h4>Company</h4>
+        <a href="#">About</a>
+        <a href="#">Blog</a>
+        <a href="#">Careers</a>
+        <a href="#">Press</a>
+      </div>
+      <div class="footer-links-group">
+        <h4>Support</h4>
+        <a href="#">Help Center</a>
+        <a href="#">Community</a>
+        <a href="#">Contact</a>
+        <a href="#">Status</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 PAL Inc. All rights reserved.</p>
+      <div class="footer-legal">
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Cookies</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

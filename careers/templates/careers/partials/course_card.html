@@ -1,0 +1,31 @@
+<!-- {# careers/partials/course_card.html
+   Context variables:
+     course.title, course.slug, course.code, course.qualification
+     course.duration_years, course.description
+     course.institution.name (optional)
+     course.career.title     (optional)
+#} -->
+<a href="{% url 'course_detail' course.slug %}"
+   class="cr-course-card"
+   aria-label="{{ course.title }}{% if course.institution %} at {{ course.institution.name }}{% endif %}">
+
+  <span class="cr-course-card__qual">{{ course.qualification }}</span>
+
+  <h3 class="cr-course-card__title">{{ course.title }}</h3>
+
+  {% if course.description %}
+    <p class="cr-card__desc" style="font-size:0.78rem;">{{ course.description }}</p>
+  {% endif %}
+
+  <div class="cr-course-card__meta">
+    {% if course.duration_years %}
+      <span>{{ course.duration_years }} yr{{ course.duration_years|pluralize }}</span>
+    {% endif %}
+    {% if course.institution %}
+      <span>{{ course.institution.name }}</span>
+    {% endif %}
+    {% if course.career %}
+      <span>{{ course.career.title }}</span>
+    {% endif %}
+  </div>
+</a>
