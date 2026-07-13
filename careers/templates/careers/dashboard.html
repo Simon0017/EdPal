@@ -1,7 +1,7 @@
 {% extends "core/user_nav.html" %}
 {% load static %}
 
-{% block title %}Careers — EdPal{% endblock %}
+{% block title %}EdPal . Careers{% endblock %}
 {% block nav_careers_dashboard %}un-nav__item--active{% endblock %}
 {% block nav_careers_dashboard_aria %}aria-current="page"{% endblock %}>
 
@@ -195,14 +195,18 @@
           </svg>
           Edit Profile
         </a>
-        <a href="{% url 'user_questionnares' %}" class="cr-action-tile">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14,2 14,8 20,8"/>
-          </svg>
-          Take Assessment
-        </a>
+        <button class="cr-action-tile"
+              type="button"
+              id="crDashAssessmentBtn"
+              aria-haspopup="dialog"
+              aria-label="Browse and take a career psychometric assessment">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/>
+        </svg>
+        Take Assessment
+      </button>
       </div>
     </section>
 
@@ -225,9 +229,12 @@
 
   </div>
 
-</div><!-- /careers-page -->
+</div>
+
+{% include "careers/partials/assessment_modal.html" %}<!-- /careers-page -->
 {% endblock %}
 
 {% block extra_js %}
   <script src="{% static 'careers/js/dashboard.js' %}"></script>
+  <script src="{% static 'careers/js/assessment_modal.js' %}"></script>
 {% endblock %}

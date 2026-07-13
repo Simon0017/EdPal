@@ -1,7 +1,7 @@
 {% extends "core/user_nav.html" %}
 {% load static %}
 
-{% block title %}Explore — EdPal Careers{% endblock %}
+{% block title %}EdPal . Explore Careers{% endblock %}
 {% block nav_careers_explore %}un-nav__item--active{% endblock %}
 {% block nav_careers_explore_aria %}aria-current="page"{% endblock %}>
 
@@ -28,14 +28,7 @@
 
   /* Server-side data for JS hydration.
      The view should serialise these querysets to JSON and pass them in context. */
-  // window.CR_DATA = {
-  //   careers:      {{ careers_json|default:"[]"|safe }},
-  //   courses:      {{ courses_json|default:"[]"|safe }},
-  //   institutions: {{ institutions_json|default:"[]"|safe }},
-  //   sectors:      {{ sectors_json|default:"[]"|safe }},
-  //   qualifications: {{ qualifications_json|default:"[]"|safe }},
-  //   countries:    {{ countries_json|default:"[]"|safe }},
-  // };
+  
 </script>
 <form id="crCsrfForm" class="hidden">{% csrf_token %}</form>
 
@@ -227,8 +220,28 @@
 <!-- Filter drawer -->
 {% include "careers/partials/drawer.html" with drawer_id="crFilterDrawer" drawer_title="Filter" %}
 
+
+{{ careers|json_script:"careers" }}
+{{ courses|json_script:"courses" }}
+{{ institutions|json_script:"institutions" }}
+{{ sectors|json_script:"sectors" }}
+{{ qualifications|json_script:"qualifications" }}
+{{ countries|json_script:"countries" }}
+
 <!-- Filter drawer body (inside the drawer) -->
 <script>
+  const getJSON = (id) =>
+    JSON.parse(document.getElementById(id).textContent);
+
+  window.CR_DATA = {
+    careers: getJSON("careers"),
+    courses: getJSON("courses"),
+    institutions: getJSON("institutions"),
+    sectors: getJSON("sectors"),
+    qualifications: getJSON("qualifications"),
+    countries: getJSON("countries"),
+  };
+
   /* Inject filter drawer body after DOM ready — keeps template clean */
   document.addEventListener('DOMContentLoaded', function () {
     const body = document.getElementById('crFilterDrawer-body');

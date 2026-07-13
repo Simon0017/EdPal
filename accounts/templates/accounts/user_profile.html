@@ -1,6 +1,6 @@
 {% extends "core/user_nav.html" %}
 {% load static %}
-{% block title %}EdPal | {{ request.user.first_name|default:request.user.username }}'s profile {% endblock %}
+{% block title %}EdPal . {{ request.user.first_name|default:request.user.username }}'s profile {% endblock %}
 {% block nav_profile %}un-nav__item--active{% endblock %}
 
 {% block breadcrumbs %}
