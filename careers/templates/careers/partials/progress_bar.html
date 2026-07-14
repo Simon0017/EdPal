@@ -1,0 +1,21 @@
+{% with pct=pct|default_if_none:0 %}
+<div class="ca-progress" role="group" aria-label="Assessment progress">
+  <div class="ca-progress__info">
+    <span>
+      <strong>{{ current }}</strong> of <strong>{{ total }}</strong> questions
+    </span>
+    <span id="caProgressPct" aria-live="polite">
+      {% if pct %}{{ pct }}{% else %}{% if total %}{{ current|default:0|floatformat:0 }}{% endif %}{% endif %}% complete
+    </span>
+  </div>
+  <div class="ca-progress__bar" role="progressbar"
+       aria-valuenow="{{ current }}"
+       aria-valuemin="1"
+       aria-valuemax="{{ total }}"
+       aria-label="{{ current }} of {{ total }} questions answered">
+    <div class="ca-progress__fill"
+         id="caProgressFill"
+         style="width: {% if total %}{% widthratio current total 100 %}{% else %}0{% endif %}%;"></div>
+  </div>
+</div>
+{% endwith %}

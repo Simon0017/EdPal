@@ -1,0 +1,255 @@
+{% extends "core/user_nav.html" %}
+{% load static %}
+
+{% block title %}EdPal . Careers . {{ career.title }}{% endblock %}
+
+{% block breadcrumbs %}
+  <a href="{% url 'user_dashboard' %}"    class="un-breadcrumbs__item">Dashboard</a>
+  <span class="un-breadcrumbs__sep">/</span>
+  <a href="{% url 'careers_dashboard' %}" class="un-breadcrumbs__item">Careers</a>
+  <span class="un-breadcrumbs__sep">/</span>
+  <a href="{% url 'careers_explore' %}"   class="un-breadcrumbs__item">Explore</a>
+  <span class="un-breadcrumbs__sep">/</span>
+  <span class="un-breadcrumbs__item un-breadcrumbs__item--current">{{ career.title }}</span>
+{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'careers/css/careers.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="careers-page" id="crDetailPage">
+
+  {# ── HERO ── #}
+  <section class="cr-hero" aria-labelledby="crDetailTitle">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;
+                gap:24px;flex-wrap:wrap;">
+
+      <div style="flex:1;min-width:240px;">
+        <span class="cr-hero__eyebrow">{{ career.sector }}</span>
+        <h1 class="cr-hero__title" id="crDetailTitle">{{ career.title }}</h1>
+        <p class="cr-hero__sub">{{ career.description }}</p>
+
+        <div class="cr-hero__actions">
+          <a href="{% url 'careers_match' %}?career={{ career.slug }}"
+             class="btn-primary" style="text-decoration:none;">
+            Check My Match
+          </a>
+          <a href="{% url 'careers_explore' %}" class="btn-outline" style="text-decoration:none;">
+            Explore More
+          </a>
+        </div>
+      </div>
+
+      {# Match score ring — hidden when match_pct is None #}
+      {% if match_pct is not None %}
+      <div class="cr-score-ring" id="crDetailRing"
+           aria-label="Your match score for {{ career.title }}: {{ match_pct }}%">
+        <svg class="cr-ring-svg" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="cr-ring-bg"   cx="60" cy="60" r="54"/>
+          <circle class="cr-ring-fill" cx="60" cy="60" r="54" id="crDetailRingFill"/>
+        </svg>
+        <div class="cr-ring-center">
+          <span class="cr-ring-value" id="crDetailRingValue">0%</span>
+          <span class="cr-ring-label">your match</span>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+
+    {# Tags #}
+    {% if career_tags %}
+    <div class="cr-chips" style="margin-top:20px;" aria-label="Career tags">
+      {% for tag in career_tags %}
+        <a href="{% url 'careers_explore' %}?tag={{ tag.slug }}"
+           class="cr-chip" style="text-decoration:none;">{{ tag.title }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+
+  {# ── QUICK STATS STRIP ── #}
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px;">
+    <div class="cr-metric-card">
+      <span class="cr-metric-card__label">Sector</span>
+      <strong class="cr-metric-card__value" style="font-size:1.1rem;">
+        {{ career.sector|default:"—" }}
+      </strong>
+    </div>
+    <div class="cr-metric-card">
+      <span class="cr-metric-card__label">Courses Available</span>
+      <strong class="cr-metric-card__value">{{ courses|length }}</strong>
+      <span class="cr-metric-card__sub">across all institutions</span>
+    </div>
+    <div class="cr-metric-card">
+      <span class="cr-metric-card__label">Institutions</span>
+      <strong class="cr-metric-card__value">{{ institutions|length }}</strong>
+      <span class="cr-metric-card__sub">offering this career</span>
+    </div>
+  </div>
+
+  {# ── MAIN GRID (content left, sidebar right) ── #}
+  <div class="cr-detail-grid" id="crDetailGrid">
+
+    {# ─── LEFT COLUMN ─── #}
+    <div class="cr-detail-main">
+
+      {# COURSES #}
+      <section class="cr-section" aria-labelledby="crDetailCoursesTitle">
+        <div class="cr-section-header">
+          <h2 class="cr-section-title" id="crDetailCoursesTitle">Courses</h2>
+          <a href="{% url 'careers_explore' %}#courses" class="cr-section-link">Browse all</a>
+        </div>
+
+        {% if courses %}
+          <div class="cr-grid cr-grid--2" id="crDetailCoursesGrid">
+            {% for course in courses %}
+              {% include "careers/partials/course_card.html" %}
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="cr-empty">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14,2 14,8 20,8"/>
+            </svg>
+            <p>No courses listed for this career yet.</p>
+          </div>
+        {% endif %}
+      </section>
+
+      {# SUBJECT REQUIREMENTS #}
+      <section class="cr-section" aria-labelledby="crDetailSubjectsTitle">
+        <div class="cr-section-header">
+          <h2 class="cr-section-title" id="crDetailSubjectsTitle">Subject Requirements</h2>
+        </div>
+        {% include "careers/partials/subject_table.html" %}
+      </section>
+
+      {# CUTOFF HISTORY #}
+      <section class="cr-section" aria-labelledby="crDetailCutoffTitle">
+        <div class="cr-section-header">
+          <h2 class="cr-section-title" id="crDetailCutoffTitle">Cutoff Points History</h2>
+        </div>
+        {% include "careers/partials/cutoff_table.html" %}
+      </section>
+
+      {# SIMILAR CAREERS #}
+      {% if similar_careers %}
+      <section class="cr-section" aria-labelledby="crDetailSimilarTitle">
+        <div class="cr-section-header">
+          <h2 class="cr-section-title" id="crDetailSimilarTitle">Similar Careers</h2>
+          <a href="{% url 'careers_explore' %}?sector={{ career.sector }}"
+             class="cr-section-link">View all in {{ career.sector }}</a>
+        </div>
+        <div class="cr-grid cr-grid--3">
+          {% for similar in similar_careers %}
+            {% include "careers/partials/career_card.html" with career=similar %}
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+    </div>{# /cr-detail-main #}
+
+    {# ─── RIGHT SIDEBAR ─── #}
+    <aside class="cr-detail-sidebar" aria-label="Career sidebar">
+
+      {# Institutions #}
+      <div class="cr-detail-sidebar-card">
+        <h2 class="cr-section-title" style="font-size:0.95rem;margin-bottom:14px;">
+          Offering Institutions
+        </h2>
+
+        {% if institutions %}
+          <div style="display:flex;flex-direction:column;gap:8px;" id="crDetailInstList">
+            {% for institution in institutions|slice:":5" %}
+              {% include "careers/partials/institution_card.html" %}
+            {% endfor %}
+          </div>
+
+          {% if institutions|length > 5 %}
+            <button class="btn-ghost" id="crShowMoreInst" type="button"
+                    style="width:100%;margin-top:10px;font-size:0.8rem;">
+              Show {{ institutions|length|add:"-5" }} more
+            </button>
+            <div id="crExtraInst" hidden>
+              {% for institution in institutions|slice:"5:" %}
+                {% include "careers/partials/institution_card.html" %}
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% else %}
+          <p style="font-size:0.82rem;opacity:0.45;">No institutions listed yet.</p>
+        {% endif %}
+      </div>
+
+      {# Career code reference #}
+      {% if career.code %}
+      <div class="cr-detail-sidebar-card">
+        <h2 class="cr-section-title" style="font-size:0.95rem;margin-bottom:12px;">
+          Reference
+        </h2>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:0.82rem;">
+          <div style="display:flex;justify-content:space-between;">
+            <span style="opacity:0.5;">Career Code</span>
+            <strong style="font-family:var(--font-mono),monospace;">{{ career.code }}</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span style="opacity:0.5;">Sector</span>
+            <strong>{{ career.sector|default:"—" }}</strong>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      {# CTA #}
+      <div class="cr-detail-sidebar-card cr-detail-sidebar-card--cta">
+        <p style="font-size:0.85rem;font-weight:700;margin:0 0 6px;">
+          Is this career right for you?
+        </p>
+        <p style="font-size:0.78rem;opacity:0.6;margin:0 0 14px;line-height:1.55;">
+          Take a psychometric assessment to see how well this career matches your profile.
+        </p>
+        <button class="btn-primary" type="button" id="crDetailAssessmentBtn"
+                aria-haspopup="dialog"
+                style="width:100%;font-size:0.82rem;padding:10px;">
+          Take Assessment
+        </button>
+      </div>
+
+    </aside>
+
+  </div>{# /cr-detail-grid #}
+</div>{# /careers-page #}
+
+{% include "careers/partials/assessment_modal.html" %}
+{% include "careers/partials/toast.html" %}
+
+{{ career.slug|json_script:"cr-career-slug" }}
+{{ match_pct|default:None|json_script:"cr-match-pct" }}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.CR_URLS = {
+    explore:     "{% url 'careers_explore' %}",
+    match:       "{% url 'careers_match' %}",
+    dashboard:   "{% url 'careers_dashboard' %}",
+  };
+  window.CR_DETAIL = {
+      careerSlug: JSON.parse(
+        document.getElementById("cr-career-slug").textContent
+      ),
+      matchPct: JSON.parse(
+        document.getElementById("cr-match-pct").textContent
+      ),
+    };
+</script>
+
+  <script src="{% static 'careers/js/career_detail.js' %}"></script>
+  <script src="{% static 'careers/js/assessment_modal.js' %}"></script>
+{% endblock %}

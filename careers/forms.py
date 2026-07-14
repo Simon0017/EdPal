@@ -1,5 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from .models import (
     Institution,
@@ -8,6 +9,13 @@ from .models import (
     Course,
     CutoffCluster,
     SubjectRequirement,
+    CareerPsychometricTest,
+    CareerPsychometricQuestion,
+    CareerPsychometricChoice,
+    CareerPsychometricResponse,
+    CareerPsychometricResponseAnswer,
+    CareerRecommendation,
+    QuestionType,
 )
 
 
@@ -279,3 +287,281 @@ class BaseSubjectRequirementFormSet(forms.BaseModelFormSet):
             raise ValidationError(
                 "At least one subject requirement must be marked as COMPULSORY."
             )
+
+     
+class CareerPsychometricTestForm(forms.ModelForm):
+    """
+    Create / update a psychometric test.
+    slug is auto-managed by model.save() so it's excluded from fields.
+    total_questions is updated programmatically, so it is also excluded.
+    """
+
+    class Meta:
+        model = CareerPsychometricTest
+        fields = [
+            "name",
+            "description",
+            "instructions",
+            "category",
+            "estimated_duration",
+            "is_active",
+            "is_premium",
+        ]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 3}),
+            "instructions": forms.Textarea(attrs={"rows": 4}),
+        }
+
+    def clean_estimated_duration(self):
+        value = self.cleaned_data.get("estimated_duration")
+        if value is not None and value <= 0:
+            raise ValidationError("Estimated duration must be greater than 0 minutes.")
+        return value
+
+
+class CareerPsychometricQuestionForm(forms.ModelForm):
+    """
+    Create / update a psychometric question.
+    Validates the structure of type-specific metadata configurations.
+    """
+
+    class Meta:
+        model = CareerPsychometricQuestion
+        fields = [
+            "questionnaire",
+            "order",
+            "prompt",
+            "help_text",
+            "question_type",
+            "required",
+            "is_active",
+            "metadata",
+        ]
+        widgets = {
+            "prompt": forms.Textarea(attrs={"rows": 3}),
+            "help_text": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def clean_metadata(self):
+        metadata = self.cleaned_data.get("metadata")
+        question_type = self.cleaned_data.get("question_type")
+
+        # If metadata is not a dictionary, raise an error
+        if not isinstance(metadata, dict):
+            raise ValidationError("Metadata must be a valid JSON object.")
+
+        # Optional schema-level checks depending on the question_type
+        if question_type == QuestionType.NUMERIC:
+            required_keys = {"min", "max"}
+            if not required_keys.issubset(metadata.keys()):
+                raise ValidationError(
+                    "Numeric metadata must contain at least 'min' and 'max' constraints."
+                )
+            try:
+                float(metadata["min"])
+                float(metadata["max"])
+            except (ValueError, TypeError):
+                raise ValidationError("'min' and 'max' values in metadata must be numbers.")
+                
+        elif question_type in [QuestionType.SHORT_TEXT, QuestionType.LONG_TEXT]:
+            if "max_length" in metadata:
+                try:
+                    int(metadata["max_length"])
+                except (ValueError, TypeError):
+                    raise ValidationError("'max_length' in metadata must be an integer.")
+
+        return metadata
+
+
+class BaseCareerPsychometricQuestionFormSet(forms.BaseModelFormSet):
+    """
+    Validates a batch of questions for a questionnaire
+    to ensure no duplicate question order coordinates within the batch.
+    """
+
+    def clean(self):
+        if any(self.errors):
+            return
+        
+        seen_orders = []
+        for form in self.forms:
+            if form.cleaned_data and not form.cleaned_data.get("DELETE", False):
+                order = form.cleaned_data.get("order")
+                if order in seen_orders:
+                    raise ValidationError(
+                        f"Duplicate display order '{order}' detected in this batch of questions."
+                    )
+                seen_orders.append(order)
+
+
+class CareerPsychometricChoiceForm(forms.ModelForm):
+    """
+    Create / update a psychometric choice option.
+    Ensures choices are only added to eligible question types.
+    """
+
+    class Meta:
+        model = CareerPsychometricChoice
+        fields = ["question", "label", "value", "order"]
+
+    def clean(self):
+        cleaned = super().clean()
+        question = cleaned.get("question")
+        value = cleaned.get("value")
+
+        if question:
+            # Prevent adding choices to text or numeric questions
+            choice_types = [
+                QuestionType.SINGLE_CHOICE,
+                QuestionType.MULTIPLE_CHOICE,
+                QuestionType.MULTI_SELECT,
+            ]
+            if question.question_type not in choice_types:
+                raise ValidationError(
+                    f"Choices can only be added to questions of type: "
+                    f"{', '.join(choice_types)}."
+                )
+
+            # Check value uniqueness within the same question
+            qs = CareerPsychometricChoice.objects.filter(question=question, value=value)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise ValidationError(
+                    {"value": f"The option value '{value}' already exists for this question."}
+                )
+
+        return cleaned
+
+
+class CareerPsychometricResponseForm(forms.ModelForm):
+    """
+    Create / update a test attempt response record.
+    Forces completed_at timestamps to match up with COMPLETED status.
+    """
+
+    class Meta:
+        model = CareerPsychometricResponse
+        fields = ["user", "questionnaire", "status", "completed_at"]
+
+    def clean(self):
+        cleaned = super().clean()
+        status = cleaned.get("status")
+        completed_at = cleaned.get("completed_at")
+
+        # Automatically manage completed_at coherence
+        if status == "COMPLETED" and not completed_at:
+            cleaned["completed_at"] = timezone.now()
+        elif status != "COMPLETED":
+            cleaned["completed_at"] = None
+
+        return cleaned
+
+
+class CareerPsychometricResponseAnswerForm(forms.ModelForm):
+    """
+    Enforces application-layer rule:
+    Only one of (selected_choices, text_answer, numeric_answer) should be populated.
+    Also validates that input values match the specified question type constraints.
+    """
+
+    class Meta:
+        model = CareerPsychometricResponseAnswer
+        fields = ["response", "question", "selected_choices", "text_answer", "numeric_answer"]
+
+    def clean(self):
+        cleaned = super().clean()
+        question = cleaned.get("question")
+        selected_choices = cleaned.get("selected_choices")
+        text_answer = cleaned.get("text_answer", "").strip()
+        numeric_answer = cleaned.get("numeric_answer")
+
+        if question:
+            q_type = question.question_type
+
+            # Rule 1: Validate ONLY relevant fields are filled
+            has_choices = bool(selected_choices)
+            has_text = bool(text_answer)
+            has_numeric = numeric_answer is not None
+
+            # Count how many answer storage types were filled out
+            provided_types_count = sum([has_choices, has_text, has_numeric])
+
+            if question.required and provided_types_count == 0:
+                raise ValidationError("This question is required and must have an answer.")
+
+            if provided_types_count > 1:
+                raise ValidationError(
+                    "An answer can only populate one output type "
+                    "(selected choices, text answer, or numeric answer)."
+                )
+
+            # Rule 2: Type matching validations
+            if q_type in [QuestionType.SINGLE_CHOICE, QuestionType.MULTIPLE_CHOICE, QuestionType.MULTI_SELECT]:
+                if not has_choices and question.required:
+                    raise ValidationError({"selected_choices": "You must select at least one choice."})
+
+            elif q_type in [QuestionType.SHORT_TEXT, QuestionType.LONG_TEXT]:
+                if not has_text and question.required:
+                    raise ValidationError({"text_answer": "This text field cannot be left blank."})
+                
+                # Check optional max length limits stored inside the metadata
+                max_len = question.metadata.get("max_length")
+                if max_len and len(text_answer) > int(max_len):
+                    raise ValidationError(
+                        {"text_answer": f"Answer exceeds the maximum length of {max_len} characters."}
+                    )
+
+            elif q_type == QuestionType.NUMERIC:
+                if not has_numeric and question.required:
+                    raise ValidationError({"numeric_answer": "You must provide a numeric answer."})
+                
+                if has_numeric:
+                    # Check metadata ranges if defined
+                    q_min = question.metadata.get("min")
+                    q_max = question.metadata.get("max")
+                    if q_min is not None and numeric_answer < q_min:
+                        raise ValidationError(
+                            {"numeric_answer": f"Value cannot be lower than {q_min}."}
+                        )
+                    if q_max is not None and numeric_answer > q_max:
+                        raise ValidationError(
+                            {"numeric_answer": f"Value cannot be higher than {q_max}."}
+                        )
+
+        return cleaned
+
+
+class CareerRecommendationForm(forms.ModelForm):
+    """
+    Admin-facing form to validate or manually review recommendation records.
+    """
+
+    class Meta:
+        model = CareerRecommendation
+        fields = [
+            "user",
+            "response",
+            "processing_status",
+            "recommendation_summary",
+            "recommendation_details",
+            "confidence_score",
+            "algorithm_version",
+            "email_sent",
+            "email_sent_at",
+        ]
+        widgets = {
+            "recommendation_summary": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def clean_confidence_score(self):
+        score = self.cleaned_data.get("confidence_score")
+        if score is not None and not (0 <= score <= 100):
+            raise ValidationError("Confidence score must be between 0.00 and 100.00.")
+        return score
+
+    def clean_recommendation_details(self):
+        details = self.cleaned_data.get("recommendation_details")
+        if not isinstance(details, dict):
+            raise ValidationError("Recommendation details must be a valid JSON object.")
+        return details  

@@ -1,0 +1,259 @@
+{% extends "core/user_nav.html" %}
+{% load static %}
+
+<!-- {#
+  psychometric_assessment.html
+
+  Full-page assessment experience for a single CareerPsychometricTest.
+
+  View must supply:
+    test              — CareerPsychometricTest instance
+    questions         — ordered queryset of CareerPsychometricQuestion with prefetch_related('choices')
+    response          — CareerPsychometricResponse instance (newly created or resumed)
+    previous_answers  — dict {question_id: answer_value} for resume support (can be empty)
+    display_mode      — 'paged' | 'scroll'  (default: 'paged')
+
+  URL name expected: 'career-assessment' with kwarg slug=test.slug
+#} -->
+
+{% block title %}{{ test.name }}EdPal . Careers . Psychometric Test{% endblock %}
+
+{% block breadcrumbs %}
+  <a href="{% url 'user_dashboard' %}"    class="un-breadcrumbs__item">Dashboard</a>
+  <span class="un-breadcrumbs__sep">/</span>
+  <a href="{% url 'careers_dashboard' %}" class="un-breadcrumbs__item">Careers</a>
+  <span class="un-breadcrumbs__sep">/</span>
+  <span class="un-breadcrumbs__item un-breadcrumbs__item--current">{{ test.name }}</span>
+{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'careers/css/careers.css' %}" />
+{% endblock %}
+
+{% block content %}
+
+<!-- {# ── Data injection ── #} -->
+<form id="caAssessmentCsrf" class="hidden">{% csrf_token %}</form>
+
+<!-- {# Toast container #} -->
+{% include "careers/partials/toast.html" %}
+
+<div class="ca-assessment-page" id="caAssessmentPage">
+
+  <!-- {# ── Header ── #} -->
+  <div class="ca-assessment-header">
+    <div class="ca-assessment-header__info">
+      <h1 class="ca-assessment-header__title">{{ test.name }}</h1>
+      <div class="ca-assessment-header__meta">
+        {% if test.category == 'basic' %}
+          <span class="cr-badge ca-badge--basic">Basic</span>
+        {% elif test.category == 'intermediate' %}
+          <span class="cr-badge ca-badge--intermediate">Intermediate</span>
+        {% elif test.category == 'advanced' %}
+          <span class="cr-badge ca-badge--advanced">Advanced</span>
+        {% endif %}
+        <span>{{ test.estimated_duration }} min</span>
+        <span>&middot;</span>
+        <span>{{ questions|length }} questions</span>
+        <span>&middot;</span>
+        <span id="caRemainingLabel">
+          <span id="caRemainingCount">{{ questions|length }}</span> remaining
+        </span>
+      </div>
+    </div>
+    <button class="btn-ghost"
+            id="caSaveExitBtn"
+            type="button"
+            style="font-size:0.8rem;padding:8px 16px;"
+            aria-label="Save progress and exit assessment">
+      Save &amp; Exit
+    </button>
+  </div>
+
+  <!-- {# ── Progress bar ── #} -->
+  <div id="caProgressWrap">
+    {% include "careers/partials/progress_bar.html" with current=1 total=questions|length %}
+  </div>
+
+  <!-- {# ── Instructions (shown before first question) ── #} -->
+  {% if test.instructions %}
+  <div class="ca-question-card" id="caInstructionsCard">
+    <p class="ca-question-number">Before you begin</p>
+    <p class="ca-question-prompt">Instructions</p>
+    <p style="font-size:0.88rem;opacity:0.7;line-height:1.7;margin:0 0 18px;">
+      {{ test.instructions }}
+    </p>
+    <button class="btn-primary" id="caStartBtn" type="button" style="font-size:0.88rem;padding:11px 24px;">
+      Begin Assessment
+    </button>
+  </div>
+  {% endif %}
+
+  <!-- {# ── Question area ── #}
+  {#
+    DISPLAY MODE SWITCH POINT:
+    - 'paged'  → JS shows one question at a time, hides the rest.
+    - 'scroll' → JS removes hidden attribute from all questions and shows them all.
+    To change mode, update display_mode in the view context or window.CA_ASSESSMENT.displayMode.
+  #} -->
+  <div id="caQuestionsWrap"
+       {% if test.instructions %}style="display:none;"{% endif %}>
+
+    {% for question in questions %}
+      <!-- {# In paged mode JS will hide all but the current question via aria-hidden + display:none.
+         In scroll mode JS will reveal all and remove individual navigation. #} -->
+      <div id="ca-q-wrapper-{{ forloop.counter0 }}"
+           data-q-index="{{ forloop.counter0 }}"
+           {% if not forloop.first and display_mode != 'scroll' %}hidden{% endif %}>
+        {% include "careers/partials/question_renderer.html" with
+            question=question
+            question_index=forloop.counter0
+            question_total=questions|length
+            display_mode=display_mode|default:'paged'
+        %}
+      </div>
+    {% empty %}
+      <div class="cr-empty">
+        <p>No questions found for this assessment.</p>
+        <a href="{% url 'careers_dashboard' %}" class="btn-outline" style="margin-top:8px;">
+          Back to Careers
+        </a>
+      </div>
+    {% endfor %}
+
+    <!-- {# ── Navigation bar (paged mode) ── #}
+    {# In scroll mode, JS replaces this with a single submit button at the bottom. #} -->
+    <div class="ca-nav-bar" id="caNavBar"
+         {% if display_mode == 'scroll' %}style="justify-content:center;"{% endif %}>
+      <button class="btn-ghost"
+              id="caPrevBtn"
+              type="button"
+              disabled
+              aria-label="Previous question"
+              style="display:flex;align-items:center;gap:6px;font-size:0.85rem;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15,18 9,12 15,6"/>
+        </svg>
+        Previous
+      </button>
+
+      <span class="ca-nav-bar__center" id="caNavLabel" aria-live="polite">
+        1 / {{ questions|length }}
+      </span>
+
+      <button class="btn-primary"
+              id="caNextBtn"
+              type="button"
+              aria-label="Next question"
+              style="display:flex;align-items:center;gap:6px;font-size:0.85rem;">
+        Next
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9,18 15,12 9,6"/>
+        </svg>
+      </button>
+
+      <!-- {# Submit button shown only on last question (paged) or always (scroll) #} -->
+      <button class="btn-primary hidden"
+              id="caSubmitBtn"
+              type="button"
+              aria-label="Submit assessment"
+              style="font-size:0.88rem;padding:11px 26px;">
+        Submit Assessment
+      </button>
+    </div>
+
+  </div><!-- /caQuestionsWrap -->
+
+  <!-- {# ── Success / Confirmation screen (hidden until submission) ── #}
+  {#
+    UX CHOICE — dedicated inline success screen (not a modal, not just a toast):
+
+    Rationale: After completing a multi-step psychometric assessment, the user
+    deserves a full-context transition that:
+      (a) confirms receipt with visual ceremony (not a tiny toast that vanishes),
+      (b) explains what happens next (processing pipeline),
+      (c) offers clear exit actions without jarring the user back to a modal.
+    A modal would feel abrupt on a full-page assessment. A toast is too ephemeral
+    for something as significant as submitting a psychometric test.
+    The inline screen replaces the question area in-place using a smooth fade animation.
+  #} -->
+  <div class="ca-success hidden" id="caSuccessScreen" role="status" aria-live="polite">
+    <div class="ca-success__icon" aria-hidden="true">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22,4 12,14.01 9,11.01"/>
+      </svg>
+    </div>
+
+    <h2 class="ca-success__title">Responses received</h2>
+
+    <p class="ca-success__body">
+      Your responses have been received successfully. Our recommendation engine is now
+      analysing your profile. Your Careers dashboard will automatically update once
+      processing is complete.
+    </p>
+
+    <div class="ca-success__steps" aria-label="What happens next">
+      <div class="ca-success__step">
+        <div class="ca-success__step-dot" aria-hidden="true"></div>
+        <span>Your answers are being processed by our recommendation engine.</span>
+      </div>
+      <div class="ca-success__step">
+        <div class="ca-success__step-dot" aria-hidden="true"></div>
+        <span>Your Careers dashboard will update automatically when ready.</span>
+      </div>
+      <div class="ca-success__step">
+        <div class="ca-success__step-dot" aria-hidden="true"></div>
+        <span>You will also receive an email with your personalised recommendations.</span>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:8px;">
+      <a href="{% url 'careers_dashboard' %}" class="btn-primary"
+         style="font-size:0.88rem;padding:12px 26px;text-decoration:none;">
+        Go to Careers Dashboard
+      </a>
+      <a href="{% url 'user_dashboard' %}" class="btn-outline"
+         style="font-size:0.88rem;padding:12px 22px;text-decoration:none;">
+        Back to Dashboard
+      </a>
+    </div>
+  </div><!-- /caSuccessScreen -->
+
+</div><!-- /ca-assessment-page -->
+
+{{ test.slug|json_script:"ca-test-slug" }}
+{{ test.name|json_script:"ca-test-name" }}
+{{ response.id|json_script:"ca-response-id" }}
+{{ questions|length|json_script:"ca-total-questions" }}
+{{ display_mode|default:"paged"|json_script:"ca-display-mode" }}
+{{ previous_answers_json|json_script:"ca-previous-answers" }}
+
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+  window.CA_ASSESSMENT = {
+    testSlug:       JSON.parse(document.getElementById("ca-test-slug").textContent),
+    testName:       JSON.parse(document.getElementById("ca-test-name").textContent),
+    responseId:     JSON.parse(document.getElementById("ca-response-id").textContent),
+    totalQuestions: JSON.parse(document.getElementById("ca-total-questions").textContent),
+
+    // 'paged' shows one question at a time; 'scroll' shows all at once.
+    // To switch default presentation globally, change display_mode in the view.
+    displayMode:    JSON.parse(document.getElementById("ca-display-mode").textContent),
+
+    submitUrl: "{% url 'career_assessment_submit' 'placeholder-slug' %}",  //test.slug
+    autosaveUrl: "{% url 'career_assessment_autosave' 'placeholder-slug' %}", //test.slug
+
+    previousAnswers: JSON.parse(
+      document.getElementById("ca-previous-answers").textContent
+    ),
+  };
+</script>
+  <script src="{% static 'careers/js/psychometric_assessment.js' %}"></script>
+{% endblock %}

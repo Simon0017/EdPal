@@ -12,7 +12,7 @@ from .models import *
 
 from .services.questionnare_post import CreateQuestionniare
 from .services.attempt_evaluation import AttemptEvaluationService
-from .services.fetch_questionnaires import FetchQuestionnairesService
+from .selectors.fetch_questionnaires import FetchQuestionnairesService
 from accounts.services.roles import (
     is_staff
 )
@@ -40,7 +40,6 @@ class AdminQuestinnare(View):
     @method_decorator(login_required)
     @method_decorator(outer_exception_handler(logger))
     def post(self,request:HttpRequest,*args,**kwargs):
-        print(request.POST)
         questionnare_obj =  CreateQuestionniare(request)
 
         questionnaire_form = questionnare_obj.create__questionnare_form()

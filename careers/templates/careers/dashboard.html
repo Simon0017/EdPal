@@ -232,9 +232,16 @@
 </div>
 
 {% include "careers/partials/assessment_modal.html" %}<!-- /careers-page -->
+
+{{ ca_tests_json|json_script:"ca-tests" }}
 {% endblock %}
 
 {% block extra_js %}
+ <script>
+    window.CA_TESTS = JSON.parse(
+        document.getElementById("ca-tests").textContent
+    );
+  </script>
   <script src="{% static 'careers/js/dashboard.js' %}"></script>
   <script src="{% static 'careers/js/assessment_modal.js' %}"></script>
 {% endblock %}

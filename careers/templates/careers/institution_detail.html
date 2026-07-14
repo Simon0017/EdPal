@@ -1,0 +1,262 @@
+{% extends "core/user_nav.html" %}
+{% load static %}
+
+{% block title %}EdPal . Careers . {{ institution.name }}{% endblock %}
+
+{% block breadcrumbs %}
+  <a href="{% url 'user_dashboard' %}"            class="un-breadcrumbs__item">Dashboard</a>
+  <span class="un-breadcrumbs__sep">/</span>
+  <a href="{% url 'careers_dashboard' %}"         class="un-breadcrumbs__item">Careers</a>
+  <span class="un-breadcrumbs__sep">/</span>
+  <a href="{% url 'careers_explore' %}#institutions" class="un-breadcrumbs__item">Institutions</a>
+  <span class="un-breadcrumbs__sep">/</span>
+  <span class="un-breadcrumbs__item un-breadcrumbs__item--current">{{ institution.name }}</span>
+{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'careers/css/careers.css' %}" />
+{% endblock %}
+
+{% block content %}
+
+<div class="careers-page">
+
+  {# ── HERO ── #}
+  <section class="cr-hero" aria-labelledby="crInstTitle">
+    <div style="display:flex;align-items:flex-start;gap:22px;flex-wrap:wrap;">
+
+      {# Logo block #}
+      <div class="cr-inst-card__logo"
+           style="width:72px;height:72px;border-radius:14px;font-size:1.3rem;flex-shrink:0;"
+           aria-hidden="true">
+        {{ institution.code|slice:":2"|upper }}
+      </div>
+
+      <div style="flex:1;min-width:200px;">
+        <span class="cr-hero__eyebrow">{{ institution.type }}</span>
+        <h1 class="cr-hero__title" id="crInstTitle">{{ institution.name }}</h1>
+
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;
+                    font-size:0.82rem;opacity:0.6;align-items:center;">
+          {% if institution.country %}
+            <span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                   style="vertical-align:middle;margin-right:3px;" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+              {{ institution.country }}
+            </span>
+          {% endif %}
+          <span>{{ course_count }} course{{ course_count|pluralize }}</span>
+          <span>&middot;</span>
+          <span>{{ career_count }} career{{ career_count|pluralize }}</span>
+        </div>
+
+        <div class="cr-hero__actions">
+          {% if institution.website %}
+            <a href="{{ institution.website }}"
+               class="btn-primary"
+               target="_blank" rel="noopener noreferrer"
+               style="text-decoration:none;">
+              Visit Website
+            </a>
+          {% endif %}
+          <a href="{% url 'careers_explore' %}#courses" class="btn-outline"
+             style="text-decoration:none;">
+            Browse All Courses
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  {# ── STATS STRIP ── #}
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px;">
+    <div class="cr-metric-card">
+      <span class="cr-metric-card__label">Type</span>
+      <strong class="cr-metric-card__value" style="font-size:1rem;line-height:1.3;">
+        {{ institution.type|default:"—" }}
+      </strong>
+    </div>
+    <div class="cr-metric-card">
+      <span class="cr-metric-card__label">Courses Offered</span>
+      <strong class="cr-metric-card__value">{{ course_count }}</strong>
+    </div>
+    <div class="cr-metric-card">
+      <span class="cr-metric-card__label">Career Paths</span>
+      <strong class="cr-metric-card__value">{{ career_count }}</strong>
+    </div>
+  </div>
+
+  {# ── COURSES WITH FILTERS ── #}
+  <section class="cr-section" aria-labelledby="crInstCoursesTitle">
+    <div class="cr-section-header">
+      <h2 class="cr-section-title" id="crInstCoursesTitle">Courses at {{ institution.name }}</h2>
+    </div>
+
+    {# Filter toolbar #}
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div class="cr-search-wrap" style="flex:1;min-width:200px;max-width:360px;">
+          <svg class="cr-search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input class="form-input cr-search"
+                 type="search"
+                 id="crInstCourseSearch"
+                 placeholder="Search courses…"
+                 aria-label="Search courses at {{ institution.name }}" />
+        </div>
+      </div>
+
+      {# Qualification chips #}
+      <div class="cr-chips" id="crInstQualChips" aria-label="Filter by qualification">
+        <button class="cr-chip cr-chip--active" data-qual="" type="button">All</button>
+        {% for qual in qualifications %}
+          <button class="cr-chip" data-qual="{{ qual }}" type="button">{{ qual }}</button>
+        {% endfor %}
+      </div>
+
+      {# Sector chips #}
+      {% if sectors %}
+      <div class="cr-chips" id="crInstSectorChips" aria-label="Filter by sector">
+        <button class="cr-chip cr-chip--active" data-sector="" type="button">All sectors</button>
+        {% for sector in sectors %}
+          <button class="cr-chip" data-sector="{{ sector }}" type="button">{{ sector }}</button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    {# Course grid #}
+    <div class="cr-grid cr-grid--3" id="crInstCoursesGrid" aria-live="polite">
+      {% for course in courses %}
+        {% include "careers/partials/course_card.html" %}
+      {% empty %}
+        <div class="cr-empty" style="grid-column:span 3;">
+          <p>No courses listed for this institution yet.</p>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="cr-empty hidden" id="crInstCoursesEmpty" role="status">
+      <p>No courses match your filters.</p>
+      <button class="btn-outline" id="crInstClearFilters" type="button"
+              style="margin-top:8px;font-size:0.82rem;">
+        Clear Filters
+      </button>
+    </div>
+  </section>
+
+  {# ── CAREERS AVAILABLE ── #}
+  {% if careers %}
+  <section class="cr-section" aria-labelledby="crInstCareersTitle">
+    <div class="cr-section-header">
+      <h2 class="cr-section-title" id="crInstCareersTitle">
+        Career Paths Available Here
+      </h2>
+    </div>
+    <div class="cr-grid cr-grid--3">
+      {% for career in careers %}
+        {% include "careers/partials/career_card.html" %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── SUBJECT REQUIREMENTS ── #}
+  {% if subject_requirements %}
+  <section class="cr-section" aria-labelledby="crInstSubjectsTitle">
+    <div class="cr-section-header">
+      <h2 class="cr-section-title" id="crInstSubjectsTitle">Common Subject Requirements</h2>
+    </div>
+    {% include "careers/partials/subject_table.html" %}
+  </section>
+  {% endif %}
+
+  {# ── CUTOFF HISTORY ── #}
+  {% if cutoff_clusters %}
+  <section class="cr-section" aria-labelledby="crInstCutoffTitle">
+    <div class="cr-section-header">
+      <h2 class="cr-section-title" id="crInstCutoffTitle">Cutoff History</h2>
+    </div>
+    {# Extended cutoff table showing course name alongside cluster data #}
+    <div class="cr-table-wrap">
+      <table class="cr-table" aria-label="Cutoff history for {{ institution.name }}">
+        <thead>
+          <tr>
+            <th scope="col">Year</th>
+            <th scope="col">Course</th>
+            <th scope="col">Cluster</th>
+            <th scope="col">Cutoff Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for cluster in cutoff_clusters %}
+          <tr>
+            <td>{{ cluster.year }}</td>
+            <td>{{ cluster.course.title }}</td>
+            <td>
+              <span class="cr-badge cr-badge--muted">Cluster {{ cluster.cluster_number }}</span>
+            </td>
+            <td>
+              <strong style="font-family:var(--font-mono),monospace;">
+                {{ cluster.cutoff_points }}
+              </strong>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+</div>{# /careers-page #}
+
+{% include "careers/partials/toast.html" %}
+
+{{ institution.slug|json_script:"cr-inst-slug" }}
+{{ course_count|default:0|json_script:"cr-inst-course-count" }}
+{{ courses|default:None|json_script:"cr-inst-courses" }}
+{{ qualifications|default:None|json_script:"cr-inst-qualifications" }}
+{{ sectors|default:None|json_script:"cr-inst-sectors" }}
+
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+  window.CR_URLS = {
+    explore:    "{% url 'careers_explore' %}",
+    dashboard:  "{% url 'careers_dashboard' %}",
+  };
+  window.CR_INST = {
+    slug: JSON.parse(
+      document.getElementById("cr-inst-slug").textContent
+    ),
+    courseCount: JSON.parse(
+      document.getElementById("cr-inst-course-count").textContent
+    ),
+
+    /* Serialised courses for client-side filtering.
+       Add to context: context['courses'] = serialize_courses(courses) */
+    courses: JSON.parse(
+      document.getElementById("cr-inst-courses").textContent
+    ),
+    qualifications: JSON.parse(
+      document.getElementById("cr-inst-qualifications").textContent
+    ),
+    sectors: JSON.parse(
+      document.getElementById("cr-inst-sectors").textContent
+    ),
+  };
+</script>
+  <script src="{% static 'careers/js/career_detail.js' %}"></script>
+{% endblock %}

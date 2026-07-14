@@ -1,0 +1,167 @@
+{#
+  careers/partials/question_renderer.html
+
+  Renders a single psychometric question card.
+  Supports all question types: SINGLE_CHOICE, MULTIPLE_CHOICE, MULTI_SELECT,
+  NUMERIC, SHORT_TEXT, LONG_TEXT.
+
+  Context variables:
+    question           — CareerPsychometricQuestion instance
+    question_index     — 0-based integer
+    question_total     — total question count
+    display_mode       — 'paged' | 'scroll' (controls whether nav buttons render)
+    response_data      — dict of {question_id: answer} for pre-populating (optional)
+
+  Usage:
+    {% include "careers/partials/question_renderer.html" with question=q question_index=forloop.counter0 %}
+#}
+<div class="ca-question-card"
+     id="ca-question-{{ question.id }}"
+     data-question-id="{{ question.id }}"
+     data-question-type="{{ question.question_type }}"
+     data-required="{{ question.required|yesno:'true,false' }}"
+     {% if display_mode == 'paged' %}
+       aria-hidden="{{ question_index|default:0|add:"0" }}"
+     {% endif %}>
+
+  <p class="ca-question-number" aria-label="Question {{ question_index|add:1 }} of {{ question_total }}">
+    Question {{ question_index|add:1 }}{% if question_total %} / {{ question_total }}{% endif %}
+    {% if question.required %}
+      <span class="required-star" aria-hidden="true">*</span>
+    {% endif %}
+  </p>
+
+  <p class="ca-question-prompt" id="ca-prompt-{{ question.id }}">
+    {{ question.prompt }}
+  </p>
+
+  {% if question.help_text %}
+    <p class="ca-question-help" id="ca-help-{{ question.id }}">{{ question.help_text }}</p>
+  {% endif %}
+
+  <!-- Error message slot (populated by JS validation) -->
+  <p class="form-error hidden"
+     id="ca-error-{{ question.id }}"
+     role="alert"
+     aria-live="polite"></p>
+
+  <!-- ── SINGLE CHOICE ── -->
+  {% if question.question_type == 'SINGLE_CHOICE' %}
+    <div class="ca-choices"
+         role="radiogroup"
+         aria-labelledby="ca-prompt-{{ question.id }}"
+         {% if question.help_text %}aria-describedby="ca-help-{{ question.id }}"{% endif %}>
+      {% for choice in question.choices.all %}
+      <button class="ca-choice"
+              type="button"
+              role="radio"
+              aria-checked="false"
+              data-choice-value="{{ choice.value }}"
+              data-choice-id="{{ choice.id }}">
+        <span class="ca-choice__indicator" aria-hidden="true"></span>
+        <span>{{ choice.label }}</span>
+      </button>
+      {% endfor %}
+    </div>
+
+  <!-- ── MULTIPLE CHOICE (select one from a list, radio semantics) ── -->
+  {% elif question.question_type == 'MULTIPLE_CHOICE' %}
+    <div class="ca-choices"
+         role="radiogroup"
+         aria-labelledby="ca-prompt-{{ question.id }}">
+      {% for choice in question.choices.all %}
+      <button class="ca-choice"
+              type="button"
+              role="radio"
+              aria-checked="false"
+              data-choice-value="{{ choice.value }}"
+              data-choice-id="{{ choice.id }}">
+        <span class="ca-choice__indicator" aria-hidden="true"></span>
+        <span>{{ choice.label }}</span>
+      </button>
+      {% endfor %}
+    </div>
+
+  <!-- ── MULTI SELECT (select many) ── -->
+  {% elif question.question_type == 'MULTI_SELECT' %}
+    <p style="font-size:0.74rem;opacity:0.5;margin:0 0 10px;">Select all that apply.</p>
+    <div class="ca-choices ca-choices--multi"
+         role="group"
+         aria-labelledby="ca-prompt-{{ question.id }}">
+      {% for choice in question.choices.all %}
+      <button class="ca-choice"
+              type="button"
+              role="checkbox"
+              aria-checked="false"
+              data-choice-value="{{ choice.value }}"
+              data-choice-id="{{ choice.id }}">
+        <span class="ca-choice__indicator" aria-hidden="true"></span>
+        <span>{{ choice.label }}</span>
+      </button>
+      {% endfor %}
+    </div>
+
+  <!-- ── NUMERIC ── -->
+  {% elif question.question_type == 'NUMERIC' %}
+    <div class="form-group" style="max-width:220px;">
+      <label class="form-label sr-only" for="ca-numeric-{{ question.id }}">
+        {{ question.prompt }}
+      </label>
+      <input class="form-input"
+             type="number"
+             id="ca-numeric-{{ question.id }}"
+             name="answer_{{ question.id }}"
+             {% if question.metadata.min is not None %}min="{{ question.metadata.min }}"{% endif %}
+             {% if question.metadata.max is not None %}max="{{ question.metadata.max }}"{% endif %}
+             {% if question.metadata.step %}step="{{ question.metadata.step }}"{% endif %}
+             {% if question.metadata.unit %}placeholder="Enter value ({{ question.metadata.unit }})"{% endif %}
+             {% if question.required %}required{% endif %}
+             aria-labelledby="ca-prompt-{{ question.id }}"
+             aria-describedby="ca-error-{{ question.id }}" />
+      {% if question.metadata.unit %}
+        <span style="font-size:0.74rem;opacity:0.45;margin-top:4px;display:block;">
+          Unit: {{ question.metadata.unit }}
+        </span>
+      {% endif %}
+    </div>
+
+  <!-- ── SHORT TEXT ── -->
+  {% elif question.question_type == 'SHORT_TEXT' %}
+    <div class="form-group">
+      <label class="form-label sr-only" for="ca-short-{{ question.id }}">
+        {{ question.prompt }}
+      </label>
+      <input class="form-input"
+             type="text"
+             id="ca-short-{{ question.id }}"
+             name="answer_{{ question.id }}"
+             maxlength="{{ question.metadata.max_length|default:255 }}"
+             placeholder="{{ question.metadata.placeholder|default:'Your answer…' }}"
+             {% if question.required %}required{% endif %}
+             aria-labelledby="ca-prompt-{{ question.id }}"
+             aria-describedby="ca-error-{{ question.id }}" />
+    </div>
+
+  <!-- ── LONG TEXT ── -->
+  {% elif question.question_type == 'LONG_TEXT' %}
+    <div class="form-group">
+      <label class="form-label sr-only" for="ca-long-{{ question.id }}">
+        {{ question.prompt }}
+      </label>
+      <textarea class="form-input form-textarea"
+                id="ca-long-{{ question.id }}"
+                name="answer_{{ question.id }}"
+                rows="5"
+                maxlength="{{ question.metadata.max_length|default:2000 }}"
+                placeholder="{{ question.metadata.placeholder|default:'Share your thoughts…' }}"
+                {% if question.required %}required{% endif %}
+                aria-labelledby="ca-prompt-{{ question.id }}"
+                aria-describedby="ca-error-{{ question.id }}"></textarea>
+      <span style="font-size:0.7rem;opacity:0.4;margin-top:4px;display:block;">
+        Max {{ question.metadata.max_length|default:2000 }} characters
+      </span>
+    </div>
+
+  {% endif %}
+
+</div><!-- /ca-question-card -->

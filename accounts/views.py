@@ -17,7 +17,7 @@ import json
 from datetime import date
 from core.decorators import outer_exception_handler
 from core.tasks.email_tasks import send_welcome_email,send_reset_password_email
-from .services.dashboard_pop import DashboardService
+from .selectors.dashboard_pop import DashboardService
 
 
 logger = logging.getLogger(__name__)

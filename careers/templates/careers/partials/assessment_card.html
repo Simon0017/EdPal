@@ -1,0 +1,94 @@
+{#
+  careers/partials/assessment_card.html
+
+  Standalone reusable card for a single psychometric test.
+  Used inside the modal grid and wherever an individual test needs to be displayed.
+
+  Context variables:
+    test.name
+    test.slug
+    test.description
+    test.category          ('basic' | 'intermediate' | 'advanced')
+    test.estimated_duration (integer, minutes)
+    test.total_questions    (integer)
+    test.is_premium         (boolean)
+    test.is_active          (boolean)
+
+  Usage:
+    {% include "careers/partials/assessment_card.html" with test=test %}
+#}
+<div class="ca-test-card"
+     data-test-slug="{{ test.slug }}"
+     data-test-category="{{ test.category }}"
+     data-premium="{{ test.is_premium|yesno:'true,false' }}"
+     tabindex="0"
+     role="button"
+     aria-label="Start {{ test.name }}{% if test.is_premium %} — Premium required{% endif %}">
+
+  <!-- Difficulty + Premium badges -->
+  <div class="ca-test-card__badges">
+    {% if test.category == 'basic' %}
+      <span class="cr-badge ca-badge--basic">Basic</span>
+    {% elif test.category == 'intermediate' %}
+      <span class="cr-badge ca-badge--intermediate">Intermediate</span>
+    {% elif test.category == 'advanced' %}
+      <span class="cr-badge ca-badge--advanced">Advanced</span>
+    {% endif %}
+
+    {# PREMIUM badge placeholder — uncomment when payment is live:
+    {% if test.is_premium %}
+      <span class="cr-badge ca-badge--premium">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
+             style="margin-right:3px;">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+        Premium
+      </span>
+    {% endif %}
+    #}
+  </div>
+
+  <h3 class="ca-test-card__name">{{ test.name }}</h3>
+  <p class="ca-test-card__desc">{{ test.description }}</p>
+
+  <div class="ca-test-card__meta">
+    <span class="ca-test-card__meta-item">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/>
+      </svg>
+      {{ test.estimated_duration }} min
+    </span>
+    <span class="ca-test-card__meta-item">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="8" y1="6"  x2="21" y2="6"/>
+        <line x1="8" y1="12" x2="21" y2="12"/>
+        <line x1="8" y1="18" x2="21" y2="18"/>
+        <line x1="3" y1="6"  x2="3.01" y2="6"/>
+        <line x1="3" y1="12" x2="3.01" y2="12"/>
+        <line x1="3" y1="18" x2="3.01" y2="18"/>
+      </svg>
+      {{ test.total_questions }} questions
+    </span>
+  </div>
+
+  {# PREMIUM locked overlay — uncomment block + add ca-test-card--locked to card when gating:
+  {% if test.is_premium and not request.user.has_premium %}
+  <div class="ca-test-card__lock-overlay" style="display:flex;" aria-label="Premium required">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="11" width="18" height="11" rx="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+    <span style="font-size:0.78rem;font-weight:600;">Premium Only</span>
+    <a href="/upgrade/" class="btn-primary"
+       style="font-size:0.72rem;padding:6px 14px;text-decoration:none;margin-top:6px;"
+       onclick="event.stopPropagation()">
+      Upgrade
+    </a>
+  </div>
+  {% endif %}
+  #}
+
+</div>
