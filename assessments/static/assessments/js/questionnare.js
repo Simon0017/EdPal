@@ -407,7 +407,7 @@ function renumberEntries (listId, prefix) {
 ───────────────────────────────────────────────────────────────*/
 const QUESTION_TYPES = [
   { value: 'MCQ',          label: 'Multiple Choice (MCQ)' },
-  { value: 'MULTI_SELECT', label: 'Multi-Select' },
+  { value: 'MULTI',        label: 'Multi-Select' },
   { value: 'NUMERIC',      label: 'Numeric' },
   { value: 'TEXT',         label: 'Free Text' },
   { value: 'LIKERT',       label: 'Likert Scale' },
@@ -901,7 +901,7 @@ async function submitForm () {
 
     if (response.status === 201 || response.ok) {
       showStatus('Questionnaire created successfully! Redirecting…', 'success');
-      // setTimeout(() => { window.location.href = window.QN_URL; }, 1800);
+      setTimeout(() => { window.location.href = window.MN_URL; }, 1800);
 
     } else {
       let data = {};
@@ -939,6 +939,20 @@ async function submitForm () {
   }
 }
 
+function _normaliseQuestionType (raw) {
+  const key = String(raw || '').trim().toUpperCase().replace(/[\s-]+/g, '_');
+  const MAP = {
+    MCQ: 'MCQ', MULTIPLE_CHOICE: 'MCQ',
+    MULTI: 'MULTI', MULTI_SELECT: 'MULTI', MULTISELECT: 'MULTI',
+    TEXT: 'TEXT', FREE_TEXT: 'TEXT',
+    NUMERIC: 'NUMERIC', RANGE: 'NUMERIC',
+    LIKERT: 'LIKERT',
+    RANKING: 'RANKING',
+  };
+  return MAP[key] || 'MCQ';
+}
+
+
 /**
  * Receives parsed { meta, questions, choices } from QuestionnaireParser
  * and populates the form, then jumps to Step 5 (review).
@@ -967,9 +981,9 @@ function _applyParsedPayload (payload) {
     /* Populate fields inside the freshly built entry */
     const get = name => entry.querySelector(`[name="${name}"]`);
     if (get('question_text'))       get('question_text').value       = q.question_text       || '';
-    if (get('question_type'))       get('question_type').value       = q.question_type       || 'MCQ';
-    if (get('weight'))              get('weight').value              = q.weight              || '';
-    if (get('max_points'))          get('max_points').value          = q.max_points          || '';
+    if (get('question_type'))       get('question_type').value       = _normaliseQuestionType(q.question_type);
+    if (get('weight'))              get('weight').value              = q.weight              || '1';
+    if (get('max_points'))          get('max_points').value          = q.max_points          || '1';
     if (get('order'))               get('order').value               = q.order               || i + 1;
     if (get('randomisation_group')) get('randomisation_group').value = q.randomisation_group || '';
     if (get('explanation'))         get('explanation').value         = q.explanation         || '';
@@ -990,7 +1004,8 @@ function _applyParsedPayload (payload) {
     const get = name => entry.querySelector(`[name="${name}"]`);
     if (get('choice_key'))            get('choice_key').value            = c.choice_key            || '';
     if (get('choice_text'))           get('choice_text').value           = c.choice_text           || '';
-    if (get('partial_score'))         get('partial_score').value         = c.partial_score         || '';
+    const isCorrectChoice = (c.is_correct === true || c.is_correct === 'true' || c.is_correct === 'on');
+    if (get('partial_score'))         get('partial_score').value         = c.partial_score || (isCorrectChoice ? '1' : '0');
     if (get('choice_order'))          get('choice_order').value          = c.choice_order          || i + 1;
     if (get('choice_explanation'))    get('choice_explanation').value    = c.choice_explanation    || '';
     if (get('choice_question_index')) get('choice_question_index').value = c.choice_question_index || '0';

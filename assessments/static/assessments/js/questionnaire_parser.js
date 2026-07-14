@@ -766,7 +766,7 @@ function _getActiveSections () {
           choice_key:            assignedKey.toString().toUpperCase(),
           choice_text:           String(row[correctCol]),
           is_correct:            'on',
-          partial_score:         partialCol !== '— skip —' ? (row[partialCol] ?? '') : '1',
+          partial_score:         (partialCol !== '— skip —' && row[partialCol] !== undefined && row[partialCol] !== '') ? row[partialCol] : '1',
           choice_order:          1,
           choice_explanation:    expCol !== '— skip —' ? (row[expCol] ?? '') : '',
           choice_question_index: qIdx,

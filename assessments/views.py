@@ -99,7 +99,6 @@ class ListQuestionnares(View):
 @method_decorator(user_passes_test(is_staff),name='dispatch')
 class ManageQuestionnares(View):
     '''Provides crud operations for staff to manage the questionnaire'''
-    template_name = "assessments/questionnare.html"
     
     @method_decorator(login_required)
     @method_decorator(outer_exception_handler(logger))
@@ -134,9 +133,9 @@ class ManageQuestionnares(View):
             "modified_at": questionnaire.modified_at,
             "attempts_count": questionnaire.attempts_count,
             "participants_count": questionnaire.participants_count,
-            "average_score": round(float(questionnaire.average_score),2),
-            "highest_score": float(questionnaire.highest_score),
-            "lowest_score": float(questionnaire.lowest_score),
+            "average_score": round(float(questionnaire.average_score),2) if questionnaire.average_score else 0.0,
+            "highest_score": float(questionnaire.highest_score) if questionnaire.highest_score else 0.0,
+            "lowest_score": float(questionnaire.lowest_score) if questionnaire.lowest_score else 0.0,
             "description": questionnaire.description,
             "max_score": questionnaire.max_score,
             "time_limit_minutes": questionnaire.time_limit_minutes,
@@ -201,7 +200,7 @@ class AttemptQuestionnaire(View):
 
         questionnaire = (
             Questionnaire.objects
-            .filter(id=pk, status="PUBLISHED")
+            .filter(id=pk)
             .prefetch_related(prefetch_questions)
             .annotate(
                 attempts_count=Count("attempts", distinct=True),

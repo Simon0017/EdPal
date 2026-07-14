@@ -27,7 +27,8 @@ class Questionnaire(models.Model):
         max_length=20,
         choices=QuestionnaireStatus.choices,
         default=QuestionnaireStatus.DRAFT,
-        db_index=True
+        db_index=True,
+        blank=True,
     )
     version_number = models.PositiveIntegerField(default=1)
     max_score      = models.DecimalField(
