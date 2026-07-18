@@ -42,7 +42,7 @@ class UserProfileAdmin(admin.ModelAdmin):
         (
             "Account",
             {
-                "fields": ("user", "date_of_birth", "about_me"),
+                "fields": ("user", "date_of_birth", "about_me","remember_me","notification_settings"),
             },
         ),
         (

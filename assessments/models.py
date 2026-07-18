@@ -43,7 +43,8 @@ class Questionnaire(models.Model):
     tags           = models.ManyToManyField(
         "core.Tag",
         through="assessments.QuestionnaireTag",
-        related_name="questionnaires"
+        related_name="questionnaires",
+        blank=True
     )
 
     created_by     = models.ForeignKey(
@@ -90,13 +91,14 @@ class QuestionnaireTag(models.Model):
         "assessments.Questionnaire", on_delete=models.CASCADE
     )
     tag              = models.ForeignKey(
-        "core.Tag", on_delete=models.CASCADE
+        "core.Tag", on_delete=models.CASCADE,blank=True
     )
 
     coupling_strength = models.DecimalField(
         max_digits=5, decimal_places=4,
         default=1.0,
-        help_text="0.0-1.0: how strongly this Q measures this tag"
+        help_text="0.0-1.0: how strongly this Q measures this tag",
+        blank=True,null=True
     )
 
     is_primary       = models.BooleanField(

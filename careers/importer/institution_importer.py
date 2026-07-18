@@ -18,13 +18,49 @@ class InstitutionImporter(BaseImporter):
         "country",
     )
 
+    # Dictionary mapping standard required columns to their potential user-provided variations
+    COLUMN_ALIASES = {
+        "code": ["code", "institution_code", "institution code", "inst_code", "id"],
+        "name": ["name", "institution_name", "institution name", "inst_name", "title"],
+        "type": ["type", "institution_type", "institution type", "inst_type", "category"],
+        "website": ["website", "url", "web_link", "web link", "site"],
+        "country": ["country", "nation", "location"],
+    }
+
     VALID_TYPES = {
         "PUBLIC_UNIVERSITY",
         "PRIVATE_UNIVERSITY",
         "TECHNICAL",
     }
 
+    def _apply_fuzzy_column_mapping(self) -> None:
+        """
+        Scans dataframe columns and renames them to match REQUIRED_COLUMNS 
+        based on known variations, case-insensitivity, and string normalization.
+        """
+        def normalize_str(s: str) -> str:
+            return str(s).lower().replace("_", "").replace(" ", "").strip()
+
+        # Build a fast lookup map from our normalized aliases
+        alias_lookup = {}
+        for canonical_key, aliases in self.COLUMN_ALIASES.items():
+            for alias in aliases:
+                alias_lookup[normalize_str(alias)] = canonical_key
+
+        rename_map = {}
+        for col in self.df.columns:
+            normalized_col = normalize_str(col)
+            if normalized_col in alias_lookup:
+                rename_map[col] = alias_lookup[normalized_col]
+
+        if rename_map:
+            self.df.rename(columns=rename_map, inplace=True)
+            logger.info(f"Remapped columns using fuzzy matching: {rename_map}")
+
     def validate(self) -> None:
+        # Normalize and map column variations to standard internal keys first
+        self._apply_fuzzy_column_mapping()
+
         validate_required_columns(self.df, self.REQUIRED_COLUMNS)
 
         for col in ["code", "name", "type"]:

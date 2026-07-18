@@ -1,8 +1,7 @@
-# subject_req_importer.py
-
 from __future__ import annotations
 
 import logging
+import pandas as pd
 from django.db import transaction
 from django.db.models import Q
 from careers.models import SubjectRequirement, Course
@@ -21,9 +20,46 @@ class SubjectRequirementImporter(BaseImporter):
         "minimum_grade",     # C+, B, etc.
     )
 
+    # Dictionary mapping standard internal keys to variations users might input
+    COLUMN_ALIASES = {
+        "course_ref": ["course_ref", "course", "course_code", "course code", "course_title", "course title", "ref_course"],
+        "subject_ref": ["subject_ref", "subject", "subject_code", "subject code", "subject_name", "subject name", "ref_subject"],
+        "requirement_type": ["requirement_type", "requirement type", "type", "req_type", "status"],
+        "minimum_grade": ["minimum_grade", "minimum grade", "grade", "min_grade", "min grade"],
+    }
+
     VALID_REQUIREMENT_TYPES = {"COMPULSORY", "ALTERNATIVE", "OPTIONAL"}
 
+    def _apply_fuzzy_column_mapping(self) -> None:
+        """
+        Scans dataframe columns and renames them to match REQUIRED_COLUMNS 
+        based on known variations and string normalization.
+        """
+        # Lowercase and strip whitespace/underscores for basic fuzzy matching
+        def normalize_str(s: str) -> str:
+            return str(s).lower().replace("_", "").replace(" ", "").strip()
+
+        # Build a fast lookup map from our normalized aliases
+        alias_lookup = {}
+        for canonical_key, aliases in self.COLUMN_ALIASES.items():
+            for alias in aliases:
+                alias_lookup[normalize_str(alias)] = canonical_key
+
+        rename_map = {}
+        for col in self.df.columns:
+            normalized_col = normalize_str(col)
+            if normalized_col in alias_lookup:
+                rename_map[col] = alias_lookup[normalized_col]
+
+        if rename_map:
+            self.df.rename(columns=rename_map, inplace=True)
+            logger.info(f"Remapped columns using fuzzy matching: {rename_map}")
+
     def validate(self) -> None:
+        # 1. Map columns using fuzzy aliases before running validation
+        self._apply_fuzzy_column_mapping()
+
+        # 2. Proceed with standard validation
         validate_required_columns(self.df, self.REQUIRED_COLUMNS)
 
         for col in ["course_ref", "subject_ref", "requirement_type"]:
@@ -105,6 +141,7 @@ class SubjectRequirementImporter(BaseImporter):
 
         to_create = []
         to_update = []
+        skipped_count = 0
 
         for idx, record in enumerate(self.records):
             course_id, subject_id = self.record_relations[idx]
@@ -117,7 +154,7 @@ class SubjectRequirementImporter(BaseImporter):
                 to_create.append(record)
             else:
                 if not self.update:
-                    self.result.skipped += 1
+                    skipped_count += 1
                     continue
 
                 existing_record = existing[lookup_key]
@@ -136,10 +173,19 @@ class SubjectRequirementImporter(BaseImporter):
                         batch_size=self.batch_size,
                     )
 
-        self.result.created += len(to_create)
-        self.result.updated += len(to_update)
+        created_count = len(to_create)
+        updated_count = len(to_update)
+
+        for attr_name in ["result", "import_result", "_result"]:
+            if hasattr(self, attr_name):
+                res_obj = getattr(self, attr_name)
+                if res_obj is not None:
+                    res_obj.created += created_count
+                    res_obj.updated += updated_count
+                    res_obj.skipped += skipped_count
+                    break
 
         logger.info(
-            f"Import complete summary - Created: {len(to_create)}, "
-            f"Updated: {len(to_update)}, Skipped: {self.result.skipped}"
+            f"Import complete summary - Created: {created_count}, "
+            f"Updated: {updated_count}, Skipped: {skipped_count}"
         )

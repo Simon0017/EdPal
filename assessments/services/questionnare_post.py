@@ -5,6 +5,7 @@ Thins the view is separated from the main views.py file to keep it clean and foc
 '''
 
 from django.http import HttpRequest
+from django.db import transaction
 from ..forms import (
     QuestionForm,
     QuestionnaireForm,
@@ -52,6 +53,8 @@ class CreateQuestionniare:
 
             tag_objects = []
             for i, (tag_id, coupling, primary) in enumerate(tags_data):
+                if not all((tag_id, coupling, primary)):
+                    continue
                 form = QuestionnaireTagForm({
                     "tag":               tag_id,
                     "coupling_strength": coupling,
@@ -60,6 +63,7 @@ class CreateQuestionniare:
                 if not form.is_valid():
                     self.errors["tags"].append({"index": i, "errors": form.errors})
                     self.has_errors = True
+                    continue
                 else:
                     tag_objects.append(form)
             
@@ -148,36 +152,37 @@ class CreateQuestionniare:
     
     def save_post(self,questionnaire_form, tag_objects:list, question_forms:list, choice_forms:list) -> bool:
         try:
-            # Save questionnaire
-            questionnaire = questionnaire_form.save(commit=False)
-            questionnaire.created_by = self.user
-            questionnaire.save()
-            assign_full_access(self.user,"assessment",questionnaire)
+            with transaction.atomic():
+                # Save questionnaire
+                questionnaire = questionnaire_form.save(commit=False)
+                questionnaire.created_by = self.user
+                questionnaire.save()
+                assign_full_access(self.user,"assessment",questionnaire)
 
-            # Save tags
-            for form in tag_objects:
-                tag_obj = form.save(commit=False)
-                tag_obj.questionnaire = questionnaire
-                tag_obj.save()
-                assign_full_access(self.user,"assessment",tag_obj)
+                # Save tags
+                for form in tag_objects:
+                    tag_obj = form.save(commit=False)
+                    tag_obj.questionnaire = questionnaire
+                    tag_obj.save()
+                    assign_full_access(self.user,"assessment",tag_obj)
 
-            # Save questions — keep a positional map for choice FK assignment
-            saved_questions = {}                      # { original_index: Question instance }
-            for original_idx, form in enumerate(question_forms):
-                question = form.save(commit=False)
-                question.questionnaire = questionnaire
-                question.save()
-                saved_questions[original_idx] = question
-                assign_full_access(self.user,"assessment",question)
+                # Save questions — keep a positional map for choice FK assignment
+                saved_questions = {}                      # { original_index: Question instance }
+                for original_idx, form in enumerate(question_forms):
+                    question = form.save(commit=False)
+                    question.questionnaire = questionnaire
+                    question.save()
+                    saved_questions[original_idx] = question
+                    assign_full_access(self.user,"assessment",question)
 
-            # Save choices — resolve FK from saved_questions map
-            for q_idx, form in choice_forms:
-                choice = form.save(commit=False)
-                choice.question = saved_questions[q_idx]
-                choice.save()
-                assign_full_access(self.user,"assessment",choice)
+                # Save choices — resolve FK from saved_questions map
+                for q_idx, form in choice_forms:
+                    choice = form.save(commit=False)
+                    choice.question = saved_questions[q_idx]
+                    choice.save()
+                    assign_full_access(self.user,"assessment",choice)
 
-            return True
+                return True
         except Exception as e:
             logger.error(str(e))
             return False

@@ -23,7 +23,50 @@ class CareerImporter(BaseImporter):
         # "tags", -> Marked optional to handle dataset variations gracefully
     )
 
+    # Dictionary mapping standard internal columns to their possible variations
+    COLUMN_ALIASES = {
+        "code": ["code", "career_code", "career code", "job_code", "id"],
+        "title": ["title", "career_title", "career title", "job_title", "name"],
+        "sector": ["sector", "career_sector", "industry", "department"],
+        "description": ["description", "desc", "career_description", "summary"],
+        "tags": ["tags", "keywords", "categories", "labels"],
+    }
+
+    def _apply_fuzzy_column_mapping(self) -> None:
+        """
+        Scans dataframe columns and renames them to match REQUIRED_COLUMNS 
+        based on known variations, case-insensitivity, and string normalization.
+        """
+        def normalize_str(s: str) -> str:
+            return str(s).lower().replace("_", "").replace(" ", "").strip()
+
+        # Build a fast lookup map from our normalized aliases
+        alias_lookup = {}
+        for canonical_key, aliases in self.COLUMN_ALIASES.items():
+            for alias in aliases:
+                alias_lookup[normalize_str(alias)] = canonical_key
+
+        rename_map = {}
+        for col in self.df.columns:
+            normalized_col = normalize_str(col)
+            if normalized_col in alias_lookup:
+                rename_map[col] = alias_lookup[normalized_col]
+
+        if rename_map:
+            self.df.rename(columns=rename_map, inplace=True)
+            logger.info(f"Remapped columns using fuzzy matching: {rename_map}")
+
+        # Ensure missing columns (like optional fields) are explicitly created as empty strings if not present
+        all_possible_columns = set(self.REQUIRED_COLUMNS) | {"tags"}
+        for column_field in all_possible_columns:
+            if column_field not in self.df.columns:
+                self.df[column_field] = ""
+                logger.info(f"Dynamically generated empty column for missing field: '{column_field}'")
+
     def validate(self) -> None:
+        # Normalize, map, and dynamically fill missing required fields before validation
+        self._apply_fuzzy_column_mapping()
+
         validate_required_columns(self.df, self.REQUIRED_COLUMNS)
 
         for col in ["code", "title", "sector"]:

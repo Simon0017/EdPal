@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.text import slugify
+from core.models import Tag
 
 class UserProfile(models.Model):
     """
@@ -19,6 +20,8 @@ class UserProfile(models.Model):
         upload_to="avatars/%Y/%m/",
         null=True, blank=True
     )
+    notification_settings = models.JSONField(null=True,blank=True)
+    remember_me = models.BooleanField(default=False,null=True,blank=True)
 
     # Subjects via M2M 
     subjects        = models.ManyToManyField(
@@ -37,7 +40,7 @@ class UserProfile(models.Model):
     def completion_percentage(self) -> int:
         """Computed at runtime"""
         fields = [self.date_of_birth,
-                  self.about_me, self.avatar]
+                  self.about_me, self.avatar,self.remember_me,self.notification_settings]
         
         filled = sum(1 for f in fields if f)
 
@@ -122,6 +125,11 @@ class Subject(models.Model):
                 self.slug = slugify(self.name)
         else:
             self.slug = slugify(self.name)
+        
+        # small layer to create a tag
+        tag,_ = Tag.objects.update_or_create(
+            title=self.name
+        )
 
         super().save(*args, **kwargs)
 

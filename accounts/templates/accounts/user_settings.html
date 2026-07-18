@@ -17,49 +17,6 @@
 {% endblock %}
 
 {% block content %}
-<script>
-  window.SETTINGS_URLS = {
-    rememberMe:     "/accounts/settings/remember-me/",
-    sessions:       "/accounts/sessions/",
-    sessionDetail:  "/accounts/sessions/",
-    changePassword: "/accounts/change-password/",
-    notifications:  "/accounts/settings/notifications/",
-    logout:         "/accounts/logout/",
-    deleteAccount:  "/accounts/delete/",
-  };
-</script>
-
-<!-- Embedded server data -->
-{{ settings_data|json_script:"attempt-data" }}
-<!--
-  Fallback sample if the view does not yet provide `settings_data`.
-  Remove this script block once the backend injects real data via json_script above.
--->
-<script id="attempt-data-fallback" type="application/json">
-{
-  "user": {
-    "id": 42,
-    "username": "jdoe",
-    "first_name": "John",
-    "last_name": "Doe",
-    "email": "john@example.com"
-  },
-  "settings": {
-    "theme": "light",
-    "sessions": [
-      {"id": "s1", "device": "Chrome on Windows", "current": true,  "expires": "2026-06-20T12:00:00Z"},
-      {"id": "s2", "device": "Firefox on Android", "current": false, "expires": "2026-06-18T08:00:00Z"}
-    ],
-    "notifications": {
-      "email": true,
-      "sms": false,
-      "push": true
-    },
-    "remember_me": true
-  }
-}
-</script>
-
 <form id="settingsCsrfForm" class="hidden">{% csrf_token %}</form>
 
 <div class="settings-page">
@@ -338,6 +295,8 @@
 
 <!-- Toast container for centralized error/success messages -->
 <div class="stp-toast-stack" id="stpToastStack" aria-live="polite" aria-atomic="true"></div>
+
+{{ data|json_script:"attempt-data" }}
 
 {% endblock %}
 

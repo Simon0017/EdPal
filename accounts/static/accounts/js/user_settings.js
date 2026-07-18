@@ -34,6 +34,15 @@ function csrfToken() {
   );
 }
 
+let settingsCommands = {
+  rememberMe: "remember-me",
+  deleteSession:"delete-session",
+  changePassword: "change-password",
+  notifications: "notifications",
+  logout: "logout",
+  deleteAccount: "delete-account",
+}
+
 async function apiFetch(url, options = {}) {
   const headers = Object.assign(
     { 'X-CSRFToken': csrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
@@ -204,9 +213,9 @@ function initRememberMe(data) {
   input.addEventListener('change', async () => {
     const value = input.checked;
     try {
-      await apiFetch(window.SETTINGS_URLS.rememberMe, {
+      await apiFetch(window.location.pathname, {
         method: 'POST',
-        body: JSON.stringify({ remember_me: value }),
+        body: JSON.stringify({ remember_me: value,command:settingsCommands.rememberMe }),
       });
       data.settings.remember_me = value;
       showToast('Preference saved.');
@@ -252,11 +261,12 @@ function initPasswordForm() {
 
     submitBtn.disabled = true;
     try {
-      await apiFetch(window.SETTINGS_URLS.changePassword, {
+      await apiFetch(window.location.pathname, {
         method: 'POST',
         body: JSON.stringify({
           current_password: fields.current.value,
           new_password: fields.next.value,
+          command:settingsCommands.changePassword,
         }),
       });
       status.textContent = 'Password updated successfully.';
@@ -318,7 +328,15 @@ function renderSessions(data) {
 
 async function endSession(id, data) {
   try {
-    await apiFetch(`${window.SETTINGS_URLS.sessionDetail}${id}/`, { method: 'DELETE' });
+    await apiFetch(
+      window.location.pathname, {
+        method: 'DELETE',
+        body: JSON.stringify({
+          sessionId:id,
+          command:settingsCommands.deleteSession
+        }),
+      }
+    );
     data.settings.sessions = data.settings.sessions.filter(s => s.id !== id);
     renderSessions(data);
     showToast('Session ended.');
@@ -342,9 +360,9 @@ function initNotifications(data) {
     input.addEventListener('change', async () => {
       const updated = Object.assign({}, data.settings.notifications, { [key]: input.checked });
       try {
-        await apiFetch(window.SETTINGS_URLS.notifications, {
+        await apiFetch(window.location.pathname, {
           method: 'POST',
-          body: JSON.stringify({ notifications: updated }),
+          body: JSON.stringify({ notifications: updated,command:settingsCommands.notifications }),
         });
         data.settings.notifications = updated;
         showToast('Notification preference saved.');
@@ -364,7 +382,14 @@ function initLogout() {
   form.addEventListener('submit', async e => {
     e.preventDefault(); // AJAX path; falls back to real submit without JS
     try {
-      await apiFetch(window.SETTINGS_URLS.logout, { method: 'POST' });
+      await apiFetch(
+        window.location.pathname, {
+        method: 'POST',
+        body: JSON.stringify({
+          command:settingsCommands.logout,
+        }),
+      }
+      );
       window.location.href = '/';
     } catch (err) {
       showToast(err.message || 'Could not log out.', 'error');
@@ -434,9 +459,9 @@ function initDeleteAccount(data) {
 
     confirmBtn.disabled = true;
     try {
-      await apiFetch(window.SETTINGS_URLS.deleteAccount, {
+      await apiFetch(window.location.pathname, {
         method: 'POST',
-        body: JSON.stringify({ confirm_username: confirmInput.value.trim() }),
+        body: JSON.stringify({ confirm_username: confirmInput.value.trim(),command:settingsCommands.deleteAccount }),
       });
       window.location.href = '/';
     } catch (err) {

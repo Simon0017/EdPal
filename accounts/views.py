@@ -18,6 +18,15 @@ from datetime import date
 from core.decorators import outer_exception_handler
 from core.tasks.email_tasks import send_welcome_email,send_reset_password_email
 from .selectors.dashboard_pop import DashboardService
+from .services.user_sessions import get_active_sessions_for_user
+from .services.user_settings import (
+    delete_user_account,
+    delete_user_session,
+    user_set_remember_me,
+    update_notification_preferences,
+    change_user_password,
+    logout_user
+)
 
 
 logger = logging.getLogger(__name__)
@@ -387,8 +396,25 @@ class UserSettings(View):
     @method_decorator(login_required)
     @method_decorator(outer_exception_handler(logger))
     def get(self,request:HttpRequest,*args,**kwargs):
+        current_user = request.user
+        current_key = request.session.session_key
+
+        active_sessions = get_active_sessions_for_user(current_user, current_key)
+
         data = {
-            
+            "user": {
+                "username": request.user.username
+            },
+            "settings": {
+                "theme": "light",
+                "remember_me": True,
+                "sessions": active_sessions,
+                "notifications": {
+                    "email": True,
+                    "sms": True,
+                    "push": True
+                }
+            }
         }
 
         context = {
@@ -400,4 +426,81 @@ class UserSettings(View):
     @method_decorator(login_required)
     @method_decorator(outer_exception_handler(logger))
     def post(self,request:HttpRequest,*args,**kwargs):
-        pass
+        data:dict = json.loads(request.body)
+
+        COMMANDS = {
+            "remember-me": lambda request, data: user_set_remember_me(
+                request.user,
+                data.get("remember_me", False),
+            ),
+            "change-password": lambda request, data: change_user_password(
+                request.user,
+                data.get("current_password"),
+                data.get("new_password"),
+            ),
+            "logout": lambda request, data: logout_user(request),
+            "notifications": lambda request, data: update_notification_preferences(
+                request.user,
+                data.get("notifications", {}),
+            ),
+            "delete-account": lambda request, data: delete_user_account(
+                request.user,
+                data.get("confirm_username"),
+            ),
+        }
+
+        command = data.get("command")
+
+        handler = COMMANDS.get(command)
+
+        if handler is None:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Unknown command.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        success = handler(request, data)
+
+        return JsonResponse(
+            {
+                "success": success,
+            },
+            status=status.HTTP_200_OK if success else status.HTTP_400_BAD_REQUEST,
+        )
+
+    @method_decorator(login_required)
+    @method_decorator(outer_exception_handler(logger))
+    def delete(self,request:HttpRequest,*args,**kwargs):
+        data:dict = json.loads(request.body)
+        
+        DELETE_COMMANDS = {
+            "delete-session": lambda request, data: delete_user_session(
+                request.user,
+                data.get("sessionId"),
+            ),
+        }
+
+        command = data.get("command")
+
+        handler = DELETE_COMMANDS.get(command)
+
+        if handler is None:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Unknown command.",
+                },
+                status=400,
+            )
+
+        success = handler(request, data)
+
+        return JsonResponse(
+            {
+                "success": success,
+            },
+            status=200 if success else 400,
+        )

@@ -24,9 +24,63 @@ class CourseImporter(BaseImporter):
         "description",
     )
 
+    # Dictionary mapping standard internal keys to variations users might input
+    COLUMN_ALIASES = {
+        "code": ["code", "course_code", "course code", "id"],
+        "title": ["title", "course_title", "course title", "name"],
+        "qualification": ["qualification", "qual", "degree_type", "level"],
+        "institution": ["institution", "inst", "university", "college", "school"],
+        "career_code": ["career_code", "career code", "career", "job_code"],
+        "duration_years": ["duration_years", "duration years", "duration", "years"],
+        "description": ["description", "desc", "course_description", "summary"],
+    }
+
     VALID_QUALIFICATIONS = {"DEGREE", "DIPLOMA", "CERTIFICATE"}
 
+    def _apply_fuzzy_column_mapping(self) -> None:
+        """
+        Scans dataframe columns and renames them to match REQUIRED_COLUMNS 
+        based on known variations, avoiding duplicate destination renames.
+        """
+        def normalize_str(s: str) -> str:
+            return str(s).lower().replace("_", "").replace(" ", "").strip()
+
+        # Build a fast lookup map from our normalized aliases
+        alias_lookup = {}
+        for canonical_key, aliases in self.COLUMN_ALIASES.items():
+            for alias in aliases:
+                alias_lookup[normalize_str(alias)] = canonical_key
+
+        rename_map = {}
+        existing_cols = set(self.df.columns)
+        assigned_targets = set()
+
+        # First pass: If an exact canonical column already exists in the dataframe, protect it
+        for col in existing_cols:
+            if col in self.REQUIRED_COLUMNS:
+                assigned_targets.add(col)
+
+        # Second pass: Safely match remaining fields without duplicating columns
+        for col in self.df.columns:
+            if col in assigned_targets:
+                continue
+                
+            normalized_col = normalize_str(col)
+            if normalized_col in alias_lookup:
+                target_key = alias_lookup[normalized_col]
+                # Only rename if we haven't already assigned or found this target column
+                if target_key not in assigned_targets:
+                    rename_map[col] = target_key
+                    assigned_targets.add(target_key)
+
+        if rename_map:
+            self.df.rename(columns=rename_map, inplace=True)
+            logger.info(f"Remapped columns using fuzzy matching safely: {rename_map}")
+
     def validate(self) -> None:
+        # Map columns using fuzzy aliases safely before running validation
+        self._apply_fuzzy_column_mapping()
+
         validate_required_columns(self.df, self.REQUIRED_COLUMNS)
 
         for col in ["code", "title", "qualification", "institution", "career_code"]:
