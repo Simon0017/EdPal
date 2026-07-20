@@ -22,6 +22,7 @@ class UserProfile(models.Model):
     )
     notification_settings = models.JSONField(null=True,blank=True)
     remember_me = models.BooleanField(default=False,null=True,blank=True)
+    updated_at = models.DateTimeField(auto_now=True,null=True)
 
     # Subjects via M2M 
     subjects        = models.ManyToManyField(
@@ -32,6 +33,10 @@ class UserProfile(models.Model):
 
     class Meta:
         db_table = "accounts_profile"
+
+        indexes = [
+            models.Index(fields=["user", "updated_at"]),
+        ]
     
     def __str__(self):
         return f"{self.user.username.title()}\'s Profile"

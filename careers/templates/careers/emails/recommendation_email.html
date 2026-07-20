@@ -1,0 +1,64 @@
+{% load l10n %}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Career Recommendations</title>
+<style>
+  /* premailer inlines all of this at send time — keep it simple and
+     table-safe since Outlook's rendering engine (Word) ignores flexbox/grid. */
+  body { margin: 0; padding: 0; background-color: #f4f5f7; font-family: Arial, Helvetica, sans-serif; }
+  .wrapper { width: 100%; background-color: #f4f5f7; padding: 32px 0; }
+  .container { max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; }
+  .header { background-color: #1a1f36; padding: 24px 32px; text-align: left; }
+  .header img { height: 32px; display: block; }
+  .body { padding: 32px; color: #1a1f36; }
+  .body h1 { font-size: 20px; margin: 0 0 8px; }
+  .body p.intro { font-size: 14px; color: #555b6e; margin: 0 0 24px; }
+  .career-card { border: 1px solid #e6e8ec; border-radius: 6px; padding: 16px; margin-bottom: 12px; }
+  .career-card h2 { font-size: 16px; margin: 0 0 4px; color: #1a1f36; }
+  .career-card .scores { font-size: 12px; color: #7c8291; margin-bottom: 8px; }
+  .career-card .narrative { font-size: 13px; color: #3c4257; margin: 0; }
+  .cta { text-align: center; margin: 28px 0 8px; }
+  .cta a { background-color: #4f5bd5; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; display: inline-block; }
+  .footer { padding: 20px 32px; font-size: 11px; color: #9aa0ac; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="container">
+    <div class="header">
+      <img src="cid:{{ logo_cid }}" alt="Company logo">
+    </div>
+    <div class="body">
+      <h1>Hi {{ profile.user.first_name|default:"there" }}, your recommendations are ready</h1>
+      <p class="intro">
+        Based on your subjects, assessments, and psychometric results, here are your
+        top career matches this round.
+      </p>
+
+      {% for career in top_careers %}
+      <div class="career-card">
+        <h2>{{ forloop.counter }}. {{ career.title }}</h2>
+        <div class="scores">
+          Fit score: {{ career.fit_score_pct }}% &middot; Confidence: {{ career.confidence_pct }}%
+        </div>
+        {% if career.narrative %}
+        <p class="narrative">{{ career.narrative }}</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+
+      <div class="cta">
+        <a href="{{ site_url|default:'#' }}/recommendations/{{ recommendation_id }}/">
+          View your full results
+        </a>
+      </div>
+    </div>
+    <div class="footer">
+      You're receiving this because you completed a career assessment with us.
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -130,6 +130,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    'http://127.0.0.1',
+    'http://localhost',
+    'https://830d-197-237-172-93.ngrok-free.app',
+]
+
 # password reset
 PASSWORD_RESET_TIMEOUT = 3600*3 #3hrs timeout
 
@@ -160,6 +166,24 @@ STATICFILES_FINDERS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# ── Cache (used for UserTagVector/career-vector caching + signal debounce) ──
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    }
+}
+
+# use this in production
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": "redis://localhost:6379/2",   # separate DB index from broker/result backend
+#         "OPTIONS": {
+#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#         },
+#     }
+# }
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -181,6 +205,11 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'  # Change to your timezone
 CELERY_ENABLE_UTC = True
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 300          # hard kill at 5 min — a single profile's job should never take this long
+CELERY_TASK_SOFT_TIME_LIMIT = 240      # SoftTimeLimitExceeded raised at 4 min, letting cleanup code run
+CELERY_WORKER_PREFETCH_MULTIPLIER = 4    # fine for short, I/O-light tasks like these
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 200   # recycle workers periodically, guards against slow memory growth
 
 # Worker settings
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
@@ -191,8 +220,31 @@ CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 
 # Periodic tasks
+# ── Crontabs (Part: "cron jobs may periodically regenerate recommendations") ──
 CELERY_BEAT_SCHEDULE = {
-    
+    # Safety net — event-triggered jobs should cover almost everyone;
+    # this catches anyone whose triggering event was missed, and is also
+    # how you'd force a full refresh after promoting a new engine version.
+    # Runs off-peak (Sunday 02:00 UTC) since it fans out one task per
+    # active user and can generate meaningful load.
+    "weekly-recommendation-regeneration": {
+        "task": "careers.tasks.regenerate_all_recommendations_task",
+        "schedule": crontab(hour=2, minute=0, day_of_week=0),
+    },
+
+    # Frequent, cheap self-healing check for jobs stuck in
+    # PENDING/PROCESSING (broker restarts, worker crashes mid-task).
+    "retry-stuck-recommendation-jobs": {
+        "task": "careers.tasks.retry_stuck_recommendation_jobs_task",
+        "schedule": crontab(minute="*/15"),
+    },
+
+    # Population-level stat — must run after most of a day's attempts
+    # are in, and is naturally a nightly batch job, not event-driven.
+    "nightly-percentile-rank-computation": {
+        "task": "careers.tasks.compute_percentile_ranks_task",
+        "schedule": crontab(hour=3, minute=0),
+    },
 }
 
 # social media  oauth

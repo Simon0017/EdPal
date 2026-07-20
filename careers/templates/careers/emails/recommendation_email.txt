@@ -1,0 +1,12 @@
+Hi {{ profile.user.first_name|default:"there" }},
+
+Your career recommendations are ready. Here are your top matches this round:
+
+{% for career in top_careers %}{{ forloop.counter }}. {{ career.title }} — Fit: {{ career.fit_score_pct }}%, Confidence: {{ career.confidence_pct }}%
+{% if career.narrative %}   {{ career.narrative }}
+{% endif %}
+{% endfor %}
+View your full results: {{ site_url|default:"" }}/recommendations/{{ recommendation_id }}/
+
+—
+You're receiving this because you completed a career assessment with us.

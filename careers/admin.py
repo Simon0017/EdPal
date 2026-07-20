@@ -19,6 +19,12 @@ from .models import (
     CareerRecommendation,
     ProcessingStatus,
     ResponseStatus,
+    UserTagVector,
+    UserInteraction,
+    RecommendationFeedback,
+    FeatureRegistry,
+    RecommendationExplanation,
+    EngineVersion,
 )
 
 
@@ -667,4 +673,85 @@ class CareerRecommendationAdmin(admin.ModelAdmin):
             f"{updated} recommendation(s) re-queued. "
             "Ensure the recommendation Celery task is running.",
         )
+
+
+@admin.register(UserTagVector)
+class UserTagVectorAdmin(admin.ModelAdmin):
+    list_display = ("profile", "tag", "affinity_score", "confidence", "evidence_count", "algorithm_version", "last_updated")
+    list_filter = ("algorithm_version",)
+    search_fields = ("profile__user__username", "tag__title")
+    autocomplete_fields = ("profile", "tag")
+    readonly_fields = ("last_updated",)
+    # This table can get large fast (users x tags) — avoid select-related
+    # blowups in the changelist.
+    list_select_related = ("profile", "tag")
+ 
+ 
+@admin.register(UserInteraction)
+class UserInteractionAdmin(admin.ModelAdmin):
+    list_display = ("profile", "career", "interaction_type", "occurred_at", "duration_ms")
+    list_filter = ("interaction_type", "occurred_at")
+    search_fields = ("profile__user__username", "career__title", "session_id")
+    autocomplete_fields = ("profile", "career", "recommendation")
+    readonly_fields = ("occurred_at",)
+    date_hierarchy = "occurred_at"
+ 
+ 
+@admin.register(RecommendationFeedback)
+class RecommendationFeedbackAdmin(admin.ModelAdmin):
+    list_display = ("profile", "career", "feedback_type", "feedback_score", "submitted_at")
+    list_filter = ("feedback_type", "submitted_at")
+    search_fields = ("profile__user__username", "career__title")
+    autocomplete_fields = ("profile", "career", "recommendation")
+    readonly_fields = ("submitted_at",)
+ 
+ 
+@admin.register(FeatureRegistry)
+class FeatureRegistryAdmin(admin.ModelAdmin):
+    list_display = ("feature_name", "feature_type", "source_table", "is_active", "version", "updated_at")
+    list_filter = ("feature_type", "is_active")
+    search_fields = ("feature_name", "source_table", "compute_function")
+    readonly_fields = ("created_at", "updated_at")
+ 
+ 
+class RecommendationExplanationInline(admin.TabularInline):
+    """
+    Suggested addition to your existing CareerRecommendationAdmin:
+        inlines = [..., RecommendationExplanationInline]
+    """
+    model = RecommendationExplanation
+    extra = 0
+    fields = ("explanation_type", "explanation_version", "created_at")
+    readonly_fields = ("created_at",)
+    can_delete = False
+ 
+ 
+@admin.register(RecommendationExplanation)
+class RecommendationExplanationAdmin(admin.ModelAdmin):
+    list_display = ("recommendation", "explanation_type", "explanation_version", "created_at")
+    list_filter = ("explanation_type",)
+    readonly_fields = ("created_at",)
+ 
+ 
+@admin.register(EngineVersion)
+class EngineVersionAdmin(admin.ModelAdmin):
+    list_display = ("version_number", "engine_type", "is_active", "is_shadow", "released_at", "deprecated_at")
+    list_filter = ("engine_type", "is_active", "is_shadow")
+    search_fields = ("version_number", "description")
+    readonly_fields = ("created_at",)
+ 
+    # Guardrail in the UI to reinforce the "one active version" invariant
+    # that's already enforced at the model level in save().
+    actions = ["make_active"]
+ 
+    @admin.action(description="Set as the active engine version")
+    def make_active(self, request, queryset):
+        if queryset.count() != 1:
+            self.message_user(request, "Select exactly one engine version to activate.", level="error")
+            return
+        engine = queryset.first()
+        engine.is_active = True
+        engine.is_shadow = False
+        engine.save()
+        self.message_user(request, f"{engine.version_number} is now the active engine.")
  

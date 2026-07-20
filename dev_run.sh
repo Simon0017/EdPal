@@ -15,7 +15,7 @@ echo "Start celery beat for scheduled workers..."
 celery -A EdPal beat --loglevel=info &
 
 echo "Start celery flower..."
-celery -A Edpal flower &
+celery -A EdPal flower &
 
 # running from the dir of the minio server ie C:\minio
 echo "Starting the minio server..."
