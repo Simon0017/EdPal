@@ -2,6 +2,7 @@
 
 from assessments.models import QuestionnaireAttempt, Questionnaire,QuestionResponse
 from core.models import Tag
+from careers.models import CareerRecommendation,Career
 from django.db.models import Avg,Count,Q,F
 from django.http import HttpResponse
 import logging
@@ -155,3 +156,40 @@ class DashboardService():
                 "author":"Albert Camus",
                 "quote":"One must imagine Sisyphus happy."
             }
+    
+    @property
+    def get_recommended_careers(self) -> list:
+        try:
+            recommedations = (
+                CareerRecommendation.objects
+                .filter(user=self.request.user.profile)
+                .only("recommendation_details")
+                .first()
+            )
+
+            # build data
+            recommedations_details = recommedations.recommendation_details
+            ranked_careers = recommedations_details.get("ranked_careers",[])
+
+            careers = []
+            for rc in ranked_careers:
+                rank = rc.get("rank")
+                if int(rank) == 4:
+                    break # only top 3 careers
+                career_id = rc.get("career_id")
+
+                career = Career.objects.get(id=career_id)
+
+                careers.append(
+                    {
+                        "rank":rank,
+                        "title":career.title if career else None,
+                        "sector":career.sector
+                    }
+
+                )
+
+            return careers
+        except Exception as e:
+            logger.error(e)
+            return []

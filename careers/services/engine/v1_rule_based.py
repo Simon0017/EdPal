@@ -40,6 +40,11 @@ class RuleBasedEngineV1(BaseRecommendationEngine):
 
         # Stage 5-7: weighting (baked into aggregation), confidence, ranking.
         career_vectors = get_all_career_tag_vectors()
+        if not career_vectors:
+            raise RuntimeError(
+                "No CareerTag rows exist — cannot rank careers. Seed CareerTag "
+                "before running the recommendation engine."
+            )
         ranked = rank_careers(aggregated, career_vectors)
 
         return EngineResult(

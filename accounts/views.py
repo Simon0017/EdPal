@@ -80,16 +80,15 @@ def upload_profile_avatar(request:HttpRequest):
 CBV(s)
 '''
 
+@method_decorator(outer_exception_handler(logger),name="dispatch")
 class RegistrationView(View):
     '''Handles user registration ie both rendering the template and also hte post requesr
     '''
     template_name = "accounts/registration.html"
 
-    @method_decorator(outer_exception_handler(logger))
     def get(self,request:HttpRequest,*args,**kwargs):
         return render(request,self.template_name)
     
-    @method_decorator(outer_exception_handler(logger))
     def post(self,request:HttpRequest,*args,**kwargs):
         user_form = UserRegistrationForm(request.POST)
         user_profile_form = UserProfileForm(request.POST)
@@ -142,10 +141,7 @@ class RegistrationView(View):
 
             return JsonResponse({
                 "success": False,
-                "errors": str(user_form.errors) + 
-                        str(careers_form.errors) +
-                        str(user_profile_form.errors) +
-                        str(profile_subject_form.errors)
+                "errors": "An error occured parsing the registration form. Please try again later."
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -288,6 +284,7 @@ class UserDashboard(View):
         trending_tags = dashboard.trending_tags
         category = dashboard.category
         quote = dashboard.quote_of_the_day
+        careers = dashboard.get_recommended_careers
 
         context = {
             "data":{
@@ -295,7 +292,8 @@ class UserDashboard(View):
                 "score_trend":score_trends,
                 "latest_questionnaires":latest_q,
                 "trending_tags":trending_tags,
-                "categories":category
+                "categories":category,
+                "careers":careers
             },
             "quote":quote
         }

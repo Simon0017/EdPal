@@ -772,7 +772,7 @@ async function submitRegistration () {
 
       // Redirect after 2.5 s (adjust URL as needed)
       setTimeout(() => {
-        window.location.href = '/accounts/login/?registered=1';
+        window.location.href = '/accounts/user-dashboard';
       }, 2500);
 
     } else if (response.status === 400) {

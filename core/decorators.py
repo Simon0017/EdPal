@@ -25,7 +25,7 @@ def outer_exception_handler(logger=logger):
                 return JsonResponse(
                     {
                         "success": False,
-                        "error": str(e),
+                        "error": "An error on the server side occured [500]",
                     },
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )

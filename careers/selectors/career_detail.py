@@ -54,6 +54,7 @@ class CareerDetailSelector:
             )
 
             match_pct = CareerDetailSelector._get_user_match_percentage(user, career.slug)
+            print(match_pct)
 
             similar_careers = (
                 Career.objects.filter(sector=career.sector)
@@ -105,10 +106,12 @@ class CareerDetailSelector:
             if not recommendation:
                 return None
 
-            careers_data = recommendation.recommendation_details.get("careers", [])
+            careers_data = recommendation.recommendation_details.get("ranked_careers", [])
             for c_data in careers_data:
-                if c_data.get("slug") == career_slug:
-                    return int(c_data.get("match_pct", 0))
+                career_id = c_data.get("career_id")
+                career_obj = Career.objects.get(id=career_id)
+                if career_obj.slug == career_slug:
+                    return int(c_data.get("fit_score", 0) * 100)
             return None
         except Exception as e:
             logger.error(f"Failed to fetch user match percentage: {e}", exc_info=True)

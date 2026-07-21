@@ -15,7 +15,13 @@
     <tbody>
       {% for req in subject_requirements %}
       <tr>
-        <td>{{ req.subject.name }}</td>
+        <td>
+          {% if req.subject.name %}
+              {{ req.subject.name }}
+          {% else %}
+              {{ req.subject }}
+          {% endif %}
+        </td>
         <td>
           {% if req.requirement_type == 'COMPULSORY' %}
             <span class="cr-badge cr-badge--primary">Compulsory</span>

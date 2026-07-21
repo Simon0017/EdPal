@@ -5,12 +5,15 @@ career tag vectors, tag relationships, and the cached UserTagVector.
 """
 from __future__ import annotations
 
+import logging
 from decimal import Decimal
 
 from django.core.cache import cache
 
 from careers.models import CareerTag, UserTagVector
 from core.models import TagRelationship
+
+logger = logging.getLogger(__name__)
 
 ALL_CAREER_VECTORS_CACHE_KEY = "recsys:all_career_tag_vectors"
 ALL_CAREER_VECTORS_CACHE_TTL = 60 * 60 * 6  # 6 hours — invalidated sooner on CareerTag change, see signals.py
@@ -42,18 +45,31 @@ def get_all_career_tag_vectors() -> dict[int, dict[int, Decimal]]:
     """
     cached = cache.get(ALL_CAREER_VECTORS_CACHE_KEY)
     if cached is not None:
-        return {
-            career_id: {tag_id: Decimal(w) for tag_id, w in tag_map.items()}
-            for career_id, tag_map in cached.items()
-        }
+        if not cached:         
+            logger.warning(
+               "Career-vector cache hit an EMPTY result — refusing to trust it, "
+               "re-querying CareerTag directly. If this keeps happening, CareerTag "
+              "genuinely has no rows."
+            )
+        else:
+            return {
+                career_id: {tag_id: Decimal(w) for tag_id, w in tag_map.items()}
+                for career_id, tag_map in cached.items()
+            }
 
     result: dict[int, dict[int, Decimal]] = {}
     rows = CareerTag.objects.select_related(None).values_list("career_id", "tag_id", "recommendation_weight")
     for career_id, tag_id, weight in rows:
         result.setdefault(career_id, {})[tag_id] = Decimal(str(weight))
 
-    serializable = {cid: {tid: str(w) for tid, w in tmap.items()} for cid, tmap in result.items()}
-    cache.set(ALL_CAREER_VECTORS_CACHE_KEY, serializable, timeout=ALL_CAREER_VECTORS_CACHE_TTL)
+    if not result:
+        logger.warning("get_all_career_tag_vectors(): CareerTag query returned ZERO rows — check seed data.")
+    else:
+        # Only cache non-empty results — an empty result almost always means
+        # "ran before data existed" or "missed an invalidation on a bulk write",
+        # and caching it would otherwise wedge every ranking job for the full TTL.
+        serializable = {cid: {tid: str(w) for tid, w in tmap.items()} for cid, tmap in result.items()}
+        cache.set(ALL_CAREER_VECTORS_CACHE_KEY, serializable, timeout=ALL_CAREER_VECTORS_CACHE_TTL)
     return result
 
 

@@ -10,7 +10,9 @@ from careers.models import (
     CutoffCluster,
     CareerRecommendation,
     CareerPsychometricTest,
-    ProcessingStatus
+    ProcessingStatus,
+    RecommendationExplanation,
+    ExplanationType
 )
 
 logger = logging.getLogger(__name__)
@@ -55,15 +57,25 @@ class CareerMatchSelector:
                 return context
 
             # 5. Populate Target Career Details
-            match_detail = match_map.get(target_career.slug, {})
+            match_detail = recommendation.recommendation_details.get("ranked_careers", [])[0]
             context["career"] = {
                 "title": target_career.title,
                 "slug": target_career.slug,
                 "sector": target_career.sector,
                 "description": target_career.description,
             }
-            context["match_pct"] = match_detail.get("match_pct", 0)
-            context["insights"] = recommendation.recommendation_details.get("insights", []) if recommendation else []
+            context["match_pct"] = round((match_detail.get("fit_score", 0) * 100),2)
+            insights = (
+                RecommendationExplanation.objects
+                .filter(recommendation=recommendation,explanation_type=ExplanationType.NARRATIVE)
+                .only("explanation_data")
+            )
+            insights_list = [
+                insight.explanation_data.get("text","")
+                for insight in insights
+            ]
+
+            context["insights"] = insights_list
 
             # 6. Pull Target Specific Courses & Linked Objects
             courses_list = CareerMatchSelector._get_courses_for_career(target_career.slug)
@@ -130,8 +142,8 @@ class CareerMatchSelector:
         try:
             if not recommendation:
                 return {}
-            careers_data = recommendation.recommendation_details.get("careers", [])
-            return {item["slug"]: item for item in careers_data if "slug" in item}
+            careers_data = recommendation.recommendation_details.get("ranked_careers", [])
+            return {item["career_id"]: item for item in careers_data if "career_id" in item}
         except Exception as e:
             logger.error(f"Failed to extract recommendation mapping: {e}", exc_info=True)
             return {}
@@ -142,8 +154,8 @@ class CareerMatchSelector:
             if slug:
                 return Career.objects.filter(slug=slug).first()
             if match_map:
-                top_slug = list(match_map.keys())[0]
-                return Career.objects.filter(slug=top_slug).first()
+                top_career_id = list(match_map.keys())[0]
+                return Career.objects.filter(id=top_career_id).first()
             return Career.objects.first()
         except Exception as e:
             logger.error(f"Failed to resolve target career: {e}", exc_info=True)

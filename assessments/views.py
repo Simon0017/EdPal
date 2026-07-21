@@ -13,6 +13,7 @@ from .models import *
 from .services.questionnare_post import CreateQuestionniare
 from .services.attempt_evaluation import AttemptEvaluationService
 from .selectors.fetch_questionnaires import FetchQuestionnairesService
+from .selectors.user_results import UserResultsSelector
 from accounts.services.roles import (
     is_staff
 )
@@ -280,35 +281,7 @@ class UserResults(View):
     @method_decorator(login_required)
     @method_decorator(outer_exception_handler(logger))
     def get(self,request:HttpRequest,*args,**kwargs):
-        attempts = QuestionnaireAttempt.objects.filter(
-            profile=request.user.profile
-        ).prefetch_related("question_responses", "score")
-
-        metrics = attempts.aggregate(
-            total=Count("id"),
-            completed=Count("id", filter=Q(status="COMPLETED")),
-            avg_pct=Avg("score__percentage"),
-            best_score=Max("score__percentage"),
-            passed=Count("id", filter=Q(score__percentage__gt=50))
-        )
-
-        metrics["avg_pct"] = round(metrics["avg_pct"] or 0, 1)
-        metrics["best_score"] = round(metrics["best_score"] or 0, 1)
-
-        data = {
-                **metrics,
-                "results":[
-                    {
-                        "title":attempt.questionnaire.title,
-                        "completed_at":attempt.completed_at,
-                        "attempt_number":attempt.attempt_number,
-                        "passed":attempt.score.percentage > 50,
-                        "percentage":round(attempt.score.percentage,1),
-
-
-                    } for attempt in attempts 
-                ]
-        }
+        data = UserResultsSelector.get_user_results(request.user.profile)
 
         context = {
             "data":data

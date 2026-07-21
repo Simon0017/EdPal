@@ -104,7 +104,7 @@ class  CareerDetailView(View):
     def get(self,request:HttpRequest,*args,**kwargs):
         try:
             slug = kwargs.get("slug")
-            context = CareerDetailSelector.get_career_detail_context(request.user, slug)
+            context = CareerDetailSelector.get_career_detail_context(request.user.profile, slug)
             return render(request, self.template_name, context)
         except Exception as e:
             logger.error(f"Unexpected execution exception in CareerDetailView: {e}", exc_info=True)

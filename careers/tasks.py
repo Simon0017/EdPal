@@ -59,7 +59,6 @@ def generate_recommendations_task(self, profile_id: int):
         profile = UserProfile.objects.get(pk=profile_id)
         engine = get_active_engine()
         result = engine.generate(profile, is_shadow=False)
-
         # rank_careers() operates on the freshly-aggregated in-memory
         # vector inside the engine; for persistence's explanation step we
         # re-read the just-written cache rather than threading the raw
@@ -70,7 +69,6 @@ def generate_recommendations_task(self, profile_id: int):
             tag_id: AggregatedTagScore(tag_id=tag_id, affinity_score=affinity, confidence=conf, evidence_count=n)
             for tag_id, (affinity, conf, n) in user_vector_raw.items()
         }
-
         recommendation = persist_recommendation(profile, result, user_vector)
         logger.info("Generated recommendation %s for profile %s (engine %s)",
                     recommendation.id, profile_id, engine.version)
