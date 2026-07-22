@@ -25,7 +25,7 @@ CBV(S)
 '''
 
 @method_decorator(login_required,name="dispatch")
-@method_decorator(outer_exception_handler(logger),name="dispatch")
+# @method_decorator(outer_exception_handler(logger),name="dispatch")
 class  CareersDashboardView(View):
     template_name = "careers/dashboard.html"
     
@@ -64,7 +64,7 @@ class  CareerMatchView(View):
     
     def get(self,request:HttpRequest,*args,**kwargs):
         try:
-            slug = request.GET.get("slug")
+            slug = request.GET.get("career")
             context = CareerMatchSelector.get_career_match_context(request.user.profile, slug)
             return render(request, self.template_name, context)
         except Exception as e:

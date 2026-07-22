@@ -5,7 +5,7 @@
      rec.match_pct (0–100)
      rec.reason (optional string)
 #} -->
-<a href="{% url 'career-match' rec.career.slug %}"
+<a href="{% url 'careers_match' %}?slug={{rec.career.slug }}"
    class="cr-rec-card"
    aria-label="{{ rec.career.title }} — {{ rec.match_pct }}% match">
 

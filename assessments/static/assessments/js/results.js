@@ -14,7 +14,6 @@ async function loadResults() {
   try {
     
     const data = window.DATA;
-    console.log(data);
     
     fillStrip(data);
     renderRows(data.results || data.attempts || []);
@@ -145,7 +144,7 @@ function populateModal(attempt) {
 
   // Career highlights
   renderModalCareers(attempt.career_highlights || []);
-
+  
   // Store attempt id on backdrop for action buttons
   document.getElementById('rsModalBackdrop').dataset.attemptId = attempt.attempt_id || attempt.id || '';
 
@@ -237,7 +236,7 @@ function renderModalCareers(careers) {
 function handleEmailToggle(attemptId) {
   const checked = document.getElementById('rsEmailToggle').checked;
   const statusEl = document.getElementById('rsEmailStatus');
-
+  
   if (!attemptId) return;
 
   fetch(window.RS_LIST_URL, {

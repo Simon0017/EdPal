@@ -42,20 +42,33 @@ class CareerDetailSelector:
             course_ids = courses.values_list("id", flat=True)
             subject_requirements = (
                 SubjectRequirement.objects.filter(course_id__in=course_ids)
-                .select_related("subject")
-                .distinct()
-                .only("subject__name", "requirement_type", "minimum_grade")
+                .order_by(
+                    "subject_id",
+                    "requirement_type",
+                    "minimum_grade",
+                )
+                .distinct(
+                    "subject_id",
+                    "requirement_type",
+                    "minimum_grade",
+                )
             )
 
             cutoff_clusters = (
                 CutoffCluster.objects.filter(course_id__in=course_ids)
-                .only("cluster_number", "cutoff_points", "year")
-                .order_by("-year", "cluster_number")
+                .order_by(
+                    "-year",
+                    "cluster_number",
+                    "cutoff_points",
+                    "course_id",
+                )
+                .distinct(
+                    "year",
+                    "cluster_number",
+                    "cutoff_points",
+                )
             )
-
             match_pct = CareerDetailSelector._get_user_match_percentage(user, career.slug)
-            print(match_pct)
-
             similar_careers = (
                 Career.objects.filter(sector=career.sector)
                 .exclude(id=career.id)

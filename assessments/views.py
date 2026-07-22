@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.views import View
 from rest_framework import status
 import logging
+import json
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET
@@ -273,13 +274,13 @@ class UserQuestionnaires(View):
         pass
 
 
-
+@method_decorator(login_required,name="dispatch")
+@method_decorator(outer_exception_handler(logger),name="dispatch")
 class UserResults(View):
     '''Handles rendering the user dashboard'''
     template_name = "assessments/results.html"
 
-    @method_decorator(login_required)
-    @method_decorator(outer_exception_handler(logger))
+    
     def get(self,request:HttpRequest,*args,**kwargs):
         data = UserResultsSelector.get_user_results(request.user.profile)
 
@@ -288,10 +289,22 @@ class UserResults(View):
         }
         return render(request,self.template_name,context)
     
-    @method_decorator(login_required)
-    @method_decorator(outer_exception_handler(logger))
     def post(self,request:HttpRequest,*args,**kwargs):
-        pass
+        post_data:dict = json.loads(request.body)
+        attempt_id = int(post_data.get("attempt_id"))
+        send = post_data.get("send")
+        action = post_data.get("action")
+
+        if action == "send_email" and send:
+            # TODO CREATE A EMAIL AND SEND OVER THE RESULTS DATA
+            pass
+
+        return JsonResponse(
+            {
+                "success":True,
+                "email_sent":True
+            },status=status.HTTP_200_OK
+        )
 
 
 class FetchQuestionnaires(View):

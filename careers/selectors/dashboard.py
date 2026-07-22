@@ -7,7 +7,9 @@ from ..models import (
     CareerPsychometricTest, 
     CareerPsychometricResponse, 
     CareerRecommendation,
-    ProcessingStatus
+    ProcessingStatus,
+    RecommendationExplanation,
+    ExplanationType
 )
 import logging
 
@@ -29,22 +31,24 @@ class DashboardSelector:
             )
             
             recommended_careers = []
+            explored_careers = 0
             top_match_pct = 0
             top_match_title = ""
             
             if latest_recommendation:
                 careers_data = latest_recommendation.get_top_careers()
+                explored_careers = len(careers_data)
                 if careers_data:
                     top_career_ref = careers_data[0]
-                    top_match_pct = top_career_ref.get("match_pct", 0)
+                    top_match_pct = round((top_career_ref.get("fit_score", 0) * 100),2)
                     
-                    career_slugs = [c["slug"] for c in careers_data[:3]]
+                    career_ids = [c["career_id"] for c in careers_data[:3]]
                     careers_db = {
-                        c.slug: c for c in Career.objects.filter(slug__in=career_slugs)
+                        c.id: c for c in Career.objects.filter(id__in=career_ids)
                     }
                     
                     for idx, c_data in enumerate(careers_data[:3], start=1):
-                        career_obj = careers_db.get(c_data["slug"])
+                        career_obj = careers_db.get(c_data["career_id"])
                         if career_obj:
                             if idx == 1:
                                 top_match_title = career_obj.title
@@ -56,8 +60,8 @@ class DashboardSelector:
                                     "sector": career_obj.sector,
                                 },
                                 "rank": idx,
-                                "match_pct": c_data.get("match_pct", 0),
-                                "reason": c_data.get("reason", "Strong match based on your profile."),
+                                "match_pct": round((top_career_ref.get("fit_score", 0) * 100),2),
+                                "reason": DashboardSelector._get_recommendation_insight(latest_recommendation),
                             })
 
             recommended_courses = []
@@ -131,7 +135,7 @@ class DashboardSelector:
 
             return {
                 "metrics": {
-                    "explored": len(recommended_careers),
+                    "explored": explored_careers,
                     "top_match_pct": top_match_pct,
                     "top_match_title": top_match_title,
                     "course_count": course_count,
@@ -148,3 +152,21 @@ class DashboardSelector:
         except Exception as e:
             logger.error(str(e))
             return {}
+
+    @staticmethod
+    def _get_recommendation_insight(recommendation:CareerRecommendation) ->list:
+        insights = (
+                RecommendationExplanation.objects
+                .filter(recommendation=recommendation,explanation_type=ExplanationType.NARRATIVE)
+                .distinct()
+                .only("explanation_data")
+            )
+        
+        insights_list = list(set(
+            [
+                insight.explanation_data.get("text","")
+                for insight in insights
+            ]
+        ))
+
+        return " ".join(insights_list)

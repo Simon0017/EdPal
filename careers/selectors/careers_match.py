@@ -57,7 +57,7 @@ class CareerMatchSelector:
                 return context
 
             # 5. Populate Target Career Details
-            match_detail = recommendation.recommendation_details.get("ranked_careers", [])[0]
+            match_detail = CareerMatchSelector._get_match_detail(recommendation.recommendation_details.get("ranked_careers", []),career_slug)
             context["career"] = {
                 "title": target_career.title,
                 "slug": target_career.slug,
@@ -65,17 +65,8 @@ class CareerMatchSelector:
                 "description": target_career.description,
             }
             context["match_pct"] = round((match_detail.get("fit_score", 0) * 100),2)
-            insights = (
-                RecommendationExplanation.objects
-                .filter(recommendation=recommendation,explanation_type=ExplanationType.NARRATIVE)
-                .only("explanation_data")
-            )
-            insights_list = [
-                insight.explanation_data.get("text","")
-                for insight in insights
-            ]
-
-            context["insights"] = insights_list
+            
+            context["insights"] = CareerMatchSelector._get_recommendation_insights(recommendation,career_slug)
 
             # 6. Pull Target Specific Courses & Linked Objects
             courses_list = CareerMatchSelector._get_courses_for_career(target_career.slug)
@@ -217,8 +208,16 @@ class CareerMatchSelector:
                 return []
             queryset = (
                 SubjectRequirement.objects.filter(course_id__in=course_ids)
-                .select_related("subject")
-                .only("subject__name", "requirement_type", "minimum_grade")
+                .order_by(
+                    "subject_id",
+                    "requirement_type",
+                    "minimum_grade",
+                )
+                .distinct(
+                    "subject_id",
+                    "requirement_type",
+                    "minimum_grade",
+                )
             )
             return [
                 {
@@ -239,8 +238,17 @@ class CareerMatchSelector:
                 return []
             queryset = (
                 CutoffCluster.objects.filter(course_id__in=course_ids)
-                .only("year", "cluster_number", "cutoff_points")
-                .order_by("-year", "cluster_number")[:10]
+                .order_by(
+                    "-year",
+                    "cluster_number",
+                    "cutoff_points",
+                    "course_id",
+                )
+                .distinct(
+                    "year",
+                    "cluster_number",
+                    "cutoff_points",
+                )
             )
             return [
                 {
@@ -313,3 +321,37 @@ class CareerMatchSelector:
         except Exception as e:
             logger.error(f"Failed to compile psychometric test list: {e}", exc_info=True)
             return []
+        
+    @staticmethod
+    def _get_match_detail(ranked_careers:list[dict],career_slug:str)-> dict:
+        if career_slug is None:
+            return ranked_careers[0]
+        
+        career = Career.objects.get(slug=career_slug)
+        if career:
+            career_id = career.id
+            match_detail = next((c for c in ranked_careers if c["career_id"]== career_id),None)
+            return match_detail
+        
+        return ranked_careers[0]
+
+    @staticmethod
+    def _get_recommendation_insights(recommendation:CareerRecommendation,career_slug:str):
+        if career_slug:
+            return []
+        
+        insights = (
+                RecommendationExplanation.objects
+                .filter(recommendation=recommendation,explanation_type=ExplanationType.NARRATIVE)
+                .distinct()
+                .only("explanation_data")
+            )
+        
+        insights_list = list(set(
+            [
+                insight.explanation_data.get("text","")
+                for insight in insights
+            ]
+        ))
+
+        return insights_list

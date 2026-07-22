@@ -38,7 +38,8 @@ class UserResultsSelector():
                         "max_score":attempt.score.raw_score,
                         "percentile_rank":(attempt.score.percentile_rank or 0),
                         "started_at":attempt.started_at,
-                        "completed_at":attempt.completed_at
+                        "completed_at":attempt.completed_at,
+                        "attempt_id":attempt.id
 
                     } for attempt in attempts 
                 ]

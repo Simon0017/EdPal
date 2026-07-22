@@ -20,7 +20,7 @@
 <script>
   window.QS_LIST_URL   = "{% url 'fetch_questionnaires' %}";
   window.QS_ATTEMPT_URL = "{% url 'attempt_questionnare' pk=1 %}";
-  window.QS_RESULTS_URL = "";
+  window.QS_RESULTS_URL = "{% url 'user_results' %}";
 </script>
 <form id="qsCsrfForm" class="hidden">{% csrf_token %}</form>
 
@@ -49,7 +49,7 @@
     <div class="qs-filters" role="group" aria-label="Filter by status">
       <button class="qs-filter-btn qs-filter-btn--active" data-filter="all" type="button">All</button>
       <button class="qs-filter-btn" data-filter="completed" type="button">Completed</button>
-      <button class="qs-filter-btn" data-filter="in_progress" type="button">In Progress</button>
+      <!-- <button class="qs-filter-btn" data-filter="in_progress" type="button">In Progress</button> -->
       <button class="qs-filter-btn" data-filter="published" type="button">New</button>
     </div>
     <div class="qs-controls__right">

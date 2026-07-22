@@ -129,5 +129,5 @@ class CareerRecommendation(models.Model):
         Convenience accessor for the structured careers list inside recommendation_details.
         Returns an empty list if details are not yet populated.
         """
-        return self.recommendation_details.get("careers", [])
+        return self.recommendation_details.get("ranked_careers", [])
     
